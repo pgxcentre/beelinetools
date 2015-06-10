@@ -1,0 +1,61 @@
+[![Build Status](https://travis-ci.org/pgxcentre/beeline2plink.svg?branch=master)](https://travis-ci.org/pgxcentre/beeline2plink)
+
+
+# beeline2plink - Converting Illumina's beeline to Plink format
+
+*Version 0.1.0*
+
+The `beeline2plink` script perform conversion from the Beeline final report
+(long format) to the Plink format.
+
+The script works on both **Python 2.7 and higher**, and **Python 3.3 and
+higher**. It has been developed and tested under Linux operating system, but
+should still work on MacOS X and Windows operating systems.
+
+
+## Usage
+
+Running the script with with the `-h` or `--help` flag will provide usage
+information.
+
+```console
+$ python beeline2plink.py --help
+usage: beeline2plink.py [-h] [-v] -i FILE [FILE ...] -m FILE [--id-col COL]
+                        [--chr-col COL] [--pos-col COL] [--delim SEP] [-o DIR]
+
+Convert beeline report(s) into Plink readable files (version 0.1.0)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+
+Input Files:
+  -i FILE [FILE ...], --input FILE [FILE ...]
+                        The name of the input file(s).
+  -m FILE, --map FILE   The name of the file containing mapping information.
+
+Mapping Options:
+  --id-col COL          The name of the column containing the marker
+                        identification numbers [Name]
+  --chr-col COL         The name of the column containing the chromosome [Chr]
+  --pos-col COL         The name of the column containing the position
+                        [MapInfo]
+  --delim SEP           The field delimiter [,]
+
+Output Options:
+  -o DIR, --output DIR  The output directory (default is working directory)
+```
+
+
+## Testing
+
+To test the script, perform the following command:
+
+```console
+$ python test_beeline2plink.py 
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.015s
+
+OK
+```
