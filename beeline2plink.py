@@ -84,13 +84,13 @@ def convert_beeline(i_filenames, out_dir, locations):
             nb_markers = None
 
             # Reading the assay information
-            line = i_file.readline().rstrip("\n")
+            line = i_file.readline().rstrip("\r\n")
             while line != "[Header]":
-                line = i_file.readline().rstrip("\n")
+                line = i_file.readline().rstrip("\r\n")
 
             while not line.startswith("[Data]"):
                 if line.startswith("Num Used SNPs"):
-                    nb_markers = int(line.rstrip("\n").split(",")[-1])
+                    nb_markers = int(line.rstrip("\r\n").split(",")[-1])
                 line = i_file.readline()
 
             if nb_markers is None:
@@ -103,7 +103,7 @@ def convert_beeline(i_filenames, out_dir, locations):
             header = {
                 name: i
                 for i, name in
-                enumerate(i_file.readline().rstrip("\n").split(","))
+                enumerate(i_file.readline().rstrip("\r\n").split(","))
             }
             required_columns = ("SNP Name", "Sample ID", "Allele1 - Forward",
                                 "Allele2 - Forward")
@@ -120,7 +120,7 @@ def convert_beeline(i_filenames, out_dir, locations):
 
             # Reading the first data line
             line = i_file.readline()
-            row = line.rstrip("\n").split(",")
+            row = line.rstrip("\r\n").split(",")
 
             # The pedfile
             pedfile = o_filename + ".ped"
@@ -170,7 +170,7 @@ def convert_beeline(i_filenames, out_dir, locations):
                             break
 
                         # Splitting and current sample
-                        row = line.rstrip("\n").split(",")
+                        row = line.rstrip("\r\n").split(",")
                         current_sample = row[header["Sample ID"]]
 
                     print("\n", sep="\t", end="", file=pedfile)
@@ -238,7 +238,7 @@ def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
             if line.startswith("[Controls]"):
                 break
 
-            row = line.rstrip("\n").split(delim)
+            row = line.rstrip("\r\n").split(delim)
 
             # Gathering the mapping information
             name = row[header[id_col]]
@@ -281,7 +281,7 @@ def get_header(f, delim=",", data_delim="[Data]"):
 
     return {
         name: i for i, name in
-        enumerate(f.readline().rstrip("\n").split(delim))
+        enumerate(f.readline().rstrip("\r\n").split(delim))
     }
 
 
