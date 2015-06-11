@@ -20,6 +20,7 @@ __version__ = "0.1.0"
 
 # The location tuple
 _Location = namedtuple("Location", ["chrom", "pos"])
+_unknown_location = _Location(chrom=0, pos=0)
 
 
 def main():
@@ -206,11 +207,15 @@ def convert_beeline(i_filenames, out_dir, locations):
             map_filename = os.path.join(out_dir, map_filename)
         with open(map_filename, "w") as o_file:
             for marker in all_markers:
-                if marker not in locations:
-                    raise ProgramError("{}: no mapping "
-                                       "information".format(marker))
-                print(locations[marker].chrom, marker, "0",
-                      locations[marker].pos, sep="\t", file=o_file)
+                marker_location = None
+                if marker in locations:
+                    marker_location = locations[marker]
+                else:
+                    marker_location = _unknown_location
+                    logging.warning("{}: no mapping "
+                                    "information".format(marker))
+                print(marker_location.chrom, marker, "0",
+                      marker_location.pos, sep="\t", file=o_file)
 
 
 def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
