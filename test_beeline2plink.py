@@ -8,6 +8,7 @@ import re
 import shutil
 import random
 import logging
+import platform
 import unittest
 import collections
 from io import StringIO
@@ -18,14 +19,14 @@ import beeline2plink
 
 
 class TestBeeline2Plink(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.tmp_dir = mkdtemp(prefix="beeline2plink_test_")
+    def setUp(self):
+        """Setup the tests."""
+        self.tmp_dir = mkdtemp(prefix="beeline2plink_test_")
 
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(self):
+        """Finishes the tests."""
         # Cleaning the temporary directory
-        shutil.rmtree(cls.tmp_dir)
+        shutil.rmtree(self.tmp_dir)
 
     def _my_compatibility_assertLogs(self, logger=None, level=None):
         """Compatibility 'assertLogs' function for Python < 3.4."""
@@ -883,9 +884,306 @@ class TestBeeline2Plink(unittest.TestCase):
 
     def test_check_args(self):
         """Tests the 'check_args' function."""
-        # Creating dummy options
-        pass
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
 
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        class DummyArgs(object):
+            pass
+        args = DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+
+        # Executing the function
+        beeline2plink.check_args(args)
+
+    def test_check_args_error_1(self):
+        """Tests the 'check_args' function (missing beeline report(s))."""
+        # Creating dummy Beeline reports (missing the third one)
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            if not filename.endswith("file_3.csv"):
+                with open(filename, "w") as o_file:
+                    pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        class DummyArgs(object):
+            pass
+        args = DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+
+        # Executing the function
+        self.assertFalse(os.path.isfile(beeline_reports[2]))
+        with self.assertRaises(beeline2plink.ProgramError) as e:
+            beeline2plink.check_args(args)
+        self.assertEqual(
+            beeline_reports[2] + ": no such file",
+            e.exception.message,
+        )
+
+    def test_check_args_error_2(self):
+        """Tests the 'check_args' function (missing map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Not creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+
+        # Creating dummy options
+        class DummyArgs(object):
+            pass
+        args = DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+
+        # Executing the function
+        self.assertFalse(os.path.isfile(map_filename))
+        with self.assertRaises(beeline2plink.ProgramError) as e:
+            beeline2plink.check_args(args)
+        self.assertEqual(
+            map_filename + ": no such file",
+            e.exception.message,
+        )
+
+    def test_check_args_error_3(self):
+        """Tests the 'check_args' function (missing column in map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        class DummyArgs(object):
+            pass
+        args = DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chromosome"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+
+        # Executing the function
+        with self.assertRaises(beeline2plink.ProgramError) as e:
+            beeline2plink.check_args(args)
+        self.assertEqual(
+            map_filename + ": missing column 'Chromosome'",
+            e.exception.message,
+        )
+
+    def test_check_args_error_4(self):
+        """Tests the 'check_args' function (missing output directory)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # The missing directory
+        missing_directory = os.path.join(self.tmp_dir, "missing_dir")
+
+        # Creating dummy options
+        class DummyArgs(object):
+            pass
+        args = DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = missing_directory
+
+        # Executing the function
+        self.assertFalse(os.path.isdir(missing_directory))
+        with self.assertRaises(beeline2plink.ProgramError) as e:
+            beeline2plink.check_args(args)
+        self.assertEqual(
+            missing_directory + ": no such directory",
+            e.exception.message,
+        )
+
+    @unittest.skipIf(platform.system() == "Windows",
+                     "Not a problem on windows systems")
+    def test_check_args_error_5(self):
+        """Tests the 'check_args' function (output directory not writable)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # The output directory
+        output_directory = os.path.join(self.tmp_dir, "output_dir")
+        if not os.path.isdir(output_directory):
+            os.mkdir(output_directory)
+
+
+        # Creating dummy options
+        class DummyArgs(object):
+            pass
+        args = DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = output_directory
+
+        # Executing the function
+        try:
+            # Changing the permission of the directory
+            os.chmod(output_directory, 0o111)
+
+            # Checking the arguments
+            with self.assertRaises(beeline2plink.ProgramError) as e:
+                beeline2plink.check_args(args)
+            self.assertEqual(
+                output_directory + ": not writable",
+                e.exception.message,
+            )
+
+        finally:
+            # Changing the permission back
+            os.chmod(output_directory, 0o750)
 
 class BaseTestCaseContext_Compatibility:
 
