@@ -3,7 +3,7 @@
 
 # beeline2plink - Converting Illumina's beeline to Plink format
 
-*Version 0.1.0*
+*Version 0.1.1*
 
 The `beeline2plink` script perform conversion from the Beeline final report
 (long format) to the Plink format.
