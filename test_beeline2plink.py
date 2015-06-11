@@ -430,6 +430,7 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # Creating a temporary file
         tmp_filename = None
+        sample_genotype = defaultdict(dict)
         with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
                                 suffix=".csv") as f:
             tmp_filename = f.name
@@ -467,6 +468,7 @@ class TestBeeline2Plink(unittest.TestCase):
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    sample_genotype[sample_id][marker_id] = genotype
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -483,17 +485,98 @@ class TestBeeline2Plink(unittest.TestCase):
                 pos=random.randint(1, 1000000),
             )
 
-        # Executing the function
-        with self.assertRaises(beeline2plink.ProgramError) as e:
+        # Executing the function (should raise a warning)
+        with self.assertLogs(level="WARNING") as cm:
             beeline2plink.convert_beeline(
-                i_filenames=[tmp_filename] * 2,
+                i_filenames=[tmp_filename],
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
             )
+        self.assertEqual(1, len(cm.output))
         self.assertEqual(
-            "marker_3: no mapping information",
-            e.exception.message,
+            "WARNING:root:marker_3: no mapping information",
+            cm.output[0],
         )
+
+        # Checking the map file
+        map_filename = os.path.splitext(tmp_filename)[0] + ".map"
+        self.assertTrue(os.path.isfile(map_filename))
+
+        # Checking the map file content
+        seen_markers = set()
+        with open(map_filename, "r") as i_file:
+            for i, line in enumerate(i_file):
+                # Gathering the information
+                marker = "marker_{}".format(i + 1)
+                row = line.rstrip("\n").split("\t")
+
+                # Comparing the content of the file for all markers
+                self.assertEqual(4, len(row))
+                self.assertEqual(marker, row[1])
+                self.assertEqual("0", row[2])
+
+                # Comparing the content of the file specific for each marker
+                if marker != "marker_3":
+                    self.assertTrue(marker in mapping_info)
+                    self.assertEqual(mapping_info[marker].chrom, int(row[0]))
+                    self.assertEqual(mapping_info[marker].pos, int(row[3]))
+
+                else:
+                    self.assertFalse(marker in mapping_info)
+                    self.assertEqual(0, int(row[0]))
+                    self.assertEqual(0, int(row[3]))
+
+                # We have compared this marker
+                seen_markers.add(marker)
+        self.assertEqual(
+            set(mapping_info.keys()) | {"marker_3"},
+            seen_markers,
+        )
+
+        # Checking the ped file
+        ped_filename = os.path.splitext(tmp_filename)[0] + ".ped"
+        self.assertTrue(os.path.isfile(ped_filename))
+
+        # Checking the ped file content
+        seen_samples = set()
+        with open(ped_filename, "r") as i_file:
+            for i, line in enumerate(i_file):
+                # Gathering the information
+                sample_id = "sample_{}".format(i + 1)
+                row = line.rstrip("\n").split("\t")
+
+                # Checking the sample information
+                self.assertEqual(6 + nb_markers, len(row))
+                sample_info = row[:6]
+                self.assertEqual(
+                    [sample_id, sample_id, "0", "0", "0", "-9"],
+                    sample_info,
+                )
+
+                # Checking the genotypes
+                seen_markers = set()
+                genotypes = row[6:]
+                self.assertEqual(nb_markers, len(genotypes))
+                for j, genotype in enumerate(genotypes):
+                    marker_id = "marker_{}".format(j + 1)
+                    self.assertEqual(
+                        sample_genotype[sample_id][marker_id],
+                        genotype,
+                    )
+                    seen_markers.add(marker_id)
+
+                self.assertEqual(
+                    set(mapping_info.keys()) | {"marker_3"},
+                    seen_markers,
+                )
+
+                # We've seen this sample now
+                seen_samples.add(sample_id)
+        expected = {
+            "sample_{}".format(i + 1) for i in
+            range(nb_samples)
+        }
+        self.assertEqual(expected, seen_samples)
 
     def test_convert_beeline_error_3(self):
         """Tests the 'convert_beeline' function (wrong nb of markers)."""
