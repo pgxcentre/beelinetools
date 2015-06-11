@@ -361,7 +361,7 @@ def check_args(args):
         try:
             with tempfile.NamedTemporaryFile(dir=args.output_dir) as tmp_file:
                 pass
-        except PermissionError:
+        except OSError:
             raise ProgramError("{}: not writable".format(args.output_dir))
 
 
