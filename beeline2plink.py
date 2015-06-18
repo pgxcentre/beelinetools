@@ -52,7 +52,12 @@ def main():
         )
 
         # Converting the beeline report(s)
-        convert_beeline(args.i_filenames, args.output_dir, locations=map_data)
+        convert_beeline(
+            i_filenames=args.i_filenames,
+            out_dir=args.output_dir,
+            locations=map_data,
+            other_opts=args,
+        )
 
     except KeyboardInterrupt:
         logging.info("Cancelled by user")
@@ -67,11 +72,14 @@ def main():
         raise
 
 
-def convert_beeline(i_filenames, out_dir, locations):
+def convert_beeline(i_filenames, out_dir, locations, other_opts):
     """Convert beeline report(s) to Plink files.
 
     Args:
         i_filenames (list): a list of file names (str)
+        out_dir (str): the name of the output directoy
+        locations (dict): a dictionary from marker ID to genomic location
+        other_opts(argparse.Namespace): the program options
 
     """
     for i_filename in i_filenames:
@@ -90,13 +98,17 @@ def convert_beeline(i_filenames, out_dir, locations):
                 line = i_file.readline().rstrip("\r\n")
 
             while not line.startswith("[Data]"):
-                if line.startswith("Num Used SNPs"):
+                if line.startswith(other_opts.nb_snps_kw):
                     nb_markers = int(line.rstrip("\r\n").split(",")[-1])
                 line = i_file.readline()
 
             if nb_markers is None:
-                raise ProgramError("{}: invalid header (missing 'Num Used "
-                                   "SNPs' value)".format(i_filename))
+                raise ProgramError(
+                    "{}: invalid header (missing '{}' value)".format(
+                        i_filename,
+                        other_opts.nb_snps_kw,
+                    )
+                )
 
             logging.info("There are {:,d} markers".format(nb_markers))
 
@@ -439,6 +451,15 @@ def parse_args(parser):
         metavar="SEP",
         default=",",
         help="The field delimiter [%(default)s]",
+    )
+    group.add_argument(
+        "--nb-snps-kw",
+        type=str,
+        metavar="KEYWORD",
+        default="Num Used SNPs",
+        help="The keyword that describe the number of used markers for the "
+             "report(s) (useful if beeline header format changes) "
+             "[%(default)s]",
     )
 
     # The output options
