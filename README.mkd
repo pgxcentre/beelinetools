@@ -23,7 +23,7 @@ $ python beeline2plink.py --help
 usage: beeline2plink.py [-h] [-v] -i FILE [FILE ...] -m FILE [--id-col COL]
                         [--chr-col COL] [--pos-col COL] [--delim SEP] [-o DIR]
 
-Convert beeline report(s) into Plink readable files (version 0.1.0)
+Convert beeline report(s) into Plink readable files (version 0.1.1)
 
 optional arguments:
   -h, --help            show this help message and exit
