@@ -18,6 +18,10 @@ from tempfile import mkdtemp, NamedTemporaryFile
 import beeline2plink
 
 
+class _DummyArgs(object):
+    pass
+
+
 class TestBeeline2Plink(unittest.TestCase):
     def setUp(self):
         """Setup the tests."""
@@ -284,10 +288,204 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
         beeline2plink.convert_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
             locations=mapping_info,
+            other_opts=other_options,
+        )
+
+        # Checking the two map files
+        for map_filename in (tmp_filename, tmp_filename_2):
+            map_filename = os.path.splitext(map_filename)[0] + ".map"
+            self.assertTrue(os.path.isfile(map_filename))
+
+            # Checking the first map file content
+            seen_markers = set()
+            with open(map_filename, "r") as i_file:
+                for i, line in enumerate(i_file):
+                    # Gathering the information
+                    marker = "marker_{}".format(i + 1)
+                    row = line.rstrip("\n").split("\t")
+
+                    # Comparing the content of the file
+                    self.assertTrue(marker in mapping_info)
+                    self.assertEqual(4, len(row))
+                    self.assertEqual(mapping_info[marker].chrom, int(row[0]))
+                    self.assertEqual(marker, row[1])
+                    self.assertEqual("0", row[2])
+                    self.assertEqual(mapping_info[marker].pos, int(row[3]))
+
+                    # We have compared this marker
+                    seen_markers.add(marker)
+            self.assertEqual(set(mapping_info.keys()), seen_markers)
+
+        # Checking the two ped files
+        zipped = zip(
+            (1, nb_samples + 1),
+            (tmp_filename, tmp_filename_2),
+            (sample_genotype, sample_genotype_2),
+        )
+        for sample_id_add, ped_filename, sample_geno in zipped:
+            ped_filename = os.path.splitext(ped_filename)[0] + ".ped"
+            self.assertTrue(os.path.isfile(ped_filename))
+
+            # Checking the ped file content
+            seen_samples = set()
+            with open(ped_filename, "r") as i_file:
+                for i, line in enumerate(i_file):
+                    # Gathering the information
+                    sample_id = "sample_{}".format(i + sample_id_add)
+                    row = line.rstrip("\n").split("\t")
+
+                    # Checking the sample information
+                    self.assertEqual(6 + nb_markers, len(row))
+                    sample_info = row[:6]
+                    self.assertEqual(
+                        [sample_id, sample_id, "0", "0", "0", "-9"],
+                        sample_info,
+                    )
+
+                    # Checking the genotypes
+                    seen_markers = set()
+                    genotypes = row[6:]
+                    self.assertEqual(nb_markers, len(genotypes))
+                    for j, genotype in enumerate(genotypes):
+                        marker_id = "marker_{}".format(j + 1)
+                        self.assertEqual(
+                            sample_geno[sample_id][marker_id],
+                            genotype,
+                        )
+                        seen_markers.add(marker_id)
+
+                    self.assertEqual(set(mapping_info.keys()), seen_markers)
+
+                    # We've seen this sample now
+                    seen_samples.add(sample_id)
+            expected = {
+                "sample_{}".format(i + sample_id_add) for i in
+                range(nb_samples)
+            }
+            self.assertEqual(expected, seen_samples)
+
+    def test_convert_beeline_2(self):
+        """Tests the 'convert_beeline' function (different nb SNPs kw)."""
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # Creating a temporary file
+        tmp_filename = None
+        sample_genotype = defaultdict(dict)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print("Sample ID", "SNP Name", "X", "Y",
+                  "Allele1 - Forward", "Allele2 - Forward",
+                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    sample_genotype[sample_id][marker_id] = genotype
+
+                    # Printing the file
+                    print(sample_id, marker_id, random.uniform(0, 3),
+                          random.uniform(0, 3), a1, a2, random.random(),
+                          random.uniform(-10, 10), sep=",", file=f,)
+
+        # Creating a temporary file
+        tmp_filename_2 = None
+        sample_genotype_2 = defaultdict(dict)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print("Sample ID", "SNP Name", "X", "Y",
+                  "Allele1 - Forward", "Allele2 - Forward",
+                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + nb_samples + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    sample_genotype_2[sample_id][marker_id] = genotype
+
+                    # Printing the file
+                    print(sample_id, marker_id, random.uniform(0, 3),
+                          random.uniform(0, 3), a1, a2, random.random(),
+                          random.uniform(-10, 10), sep=",", file=f,)
+
+        # Generating mapping information
+        mapping_info = {}
+        for i in range(nb_markers):
+            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+            )
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num SNPs"
+        beeline2plink.convert_beeline(
+            i_filenames=[tmp_filename, tmp_filename_2],
+            out_dir=self.tmp_dir,
+            locations=mapping_info,
+            other_opts=other_options,
         )
 
         # Checking the two map files
@@ -422,11 +620,14 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
         with self.assertRaises(beeline2plink.ProgramError) as e:
             beeline2plink.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
+                other_opts=other_options,
             )
         self.assertEqual(
             tmp_filename + ": invalid header (missing 'Num Used SNPs' value)",
@@ -497,11 +698,14 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Executing the function (should raise a warning)
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
             beeline2plink.convert_beeline(
                 i_filenames=[tmp_filename],
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
+                other_opts=other_options,
             )
         self.assertEqual(1, len(cm.output))
         self.assertEqual(
@@ -649,11 +853,14 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
         with self.assertRaises(beeline2plink.ProgramError) as e:
             beeline2plink.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
+                other_opts=other_options,
             )
         self.assertEqual(
             tmp_filename + ": missing 1 marker for sample 'sample_1'",
@@ -720,11 +927,14 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
         with self.assertRaises(beeline2plink.ProgramError) as e:
             beeline2plink.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
+                other_opts=other_options,
             )
         self.assertEqual(
             tmp_filename + ": 'Allele2 - Forward': missing column",
@@ -798,11 +1008,14 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
         with self.assertRaises(beeline2plink.ProgramError) as e:
             beeline2plink.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
+                other_opts=other_options,
             )
         self.assertEqual(
             tmp_filename + ": marker order is not the same for sample "
@@ -870,11 +1083,14 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
         with self.assertRaises(beeline2plink.ProgramError) as e:
             beeline2plink.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
+                other_opts=other_options,
             )
         self.assertEqual(
             tmp_filename + ": data should be sorted by samples, not by "
@@ -913,9 +1129,7 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Creating dummy options
-        class DummyArgs(object):
-            pass
-        args = DummyArgs()
+        args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
         args.delim = ","
@@ -923,6 +1137,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
         args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
 
         # Executing the function
         beeline2plink.check_args(args)
@@ -959,9 +1174,7 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Creating dummy options
-        class DummyArgs(object):
-            pass
-        args = DummyArgs()
+        args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
         args.delim = ","
@@ -969,6 +1182,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
         args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
 
         # Executing the function
         self.assertFalse(os.path.isfile(beeline_reports[2]))
@@ -994,9 +1208,7 @@ class TestBeeline2Plink(unittest.TestCase):
         map_filename = os.path.join(self.tmp_dir, "map_file.csv")
 
         # Creating dummy options
-        class DummyArgs(object):
-            pass
-        args = DummyArgs()
+        args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
         args.delim = ","
@@ -1004,6 +1216,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
         args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
 
         # Executing the function
         self.assertFalse(os.path.isfile(map_filename))
@@ -1045,9 +1258,7 @@ class TestBeeline2Plink(unittest.TestCase):
             )
 
         # Creating dummy options
-        class DummyArgs(object):
-            pass
-        args = DummyArgs()
+        args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
         args.delim = ","
@@ -1055,6 +1266,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chr_col = "Chromosome"
         args.pos_col = "MapInfo"
         args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
 
         # Executing the function
         with self.assertRaises(beeline2plink.ProgramError) as e:
@@ -1098,9 +1310,7 @@ class TestBeeline2Plink(unittest.TestCase):
         missing_directory = os.path.join(self.tmp_dir, "missing_dir")
 
         # Creating dummy options
-        class DummyArgs(object):
-            pass
-        args = DummyArgs()
+        args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
         args.delim = ","
@@ -1108,6 +1318,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
         args.output_dir = missing_directory
+        args.nb_snps_kw = "Num Used SNPs"
 
         # Executing the function
         self.assertFalse(os.path.isdir(missing_directory))
@@ -1155,11 +1366,7 @@ class TestBeeline2Plink(unittest.TestCase):
         if not os.path.isdir(output_directory):
             os.mkdir(output_directory)
 
-
-        # Creating dummy options
-        class DummyArgs(object):
-            pass
-        args = DummyArgs()
+        args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
         args.delim = ","
@@ -1167,6 +1374,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
         args.output_dir = output_directory
+        args.nb_snps_kw = "Num Used SNPs"
 
         # Executing the function
         try:
@@ -1184,6 +1392,7 @@ class TestBeeline2Plink(unittest.TestCase):
         finally:
             # Changing the permission back
             os.chmod(output_directory, 0o750)
+
 
 class BaseTestCaseContext_Compatibility:
 
