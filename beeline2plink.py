@@ -64,7 +64,8 @@ def main():
             # Extracting from the beeline report(s)
             extract_beeline(
                 i_filenames=args.i_filenames,
-                o_filename=args.o_filename,
+                out_dir=args.output_dir,
+                o_suffix=args.o_suffix,
                 locations=map_data,
                 other_opts=args,
             )
@@ -146,9 +147,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             row = line.rstrip("\r\n").split(",")
 
             # The pedfile
-            pedfile = o_filename + ".ped"
-            if out_dir is not None:
-                pedfile = os.path.join(out_dir, pedfile)
+            pedfile = os.path.join(out_dir, o_filename + ".ped")
             with open(pedfile, "w") as pedfile:
                 while line != "":
                     # Getting the marker name and sample id
@@ -224,9 +223,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             logging.info("Done writing {:,d} samples".format(nb_samples))
 
         # Printing the map file
-        map_filename = o_filename + ".map"
-        if out_dir is not None:
-            map_filename = os.path.join(out_dir, map_filename)
+        map_filename = os.path.join(out_dir, o_filename + ".map")
         with open(map_filename, "w") as o_file:
             for marker in all_markers:
                 marker_location = None
@@ -240,27 +237,36 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                       marker_location.pos, sep="\t", file=o_file)
 
 
-def extract_beeline(i_filenames, o_filename, locations, other_opts):
+def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
     """Extracts information from beeline report(s).
 
     Args:
         i_filenames (list): a list of file names (str)
-        o_filename (str): the name of the output file
+        out_dir (str): the name of the output directory
+        o_suffix (str): the suffix to add to the output file(s)
         locations (dict): a dictionary from marker ID to genomic location
         other_opts(argparse.Namespace): the program options
 
     """
-    # The number of markers for all files (and the list of markers)
-    all_nb_markers = None
-    extracted_markers = set()
-
     # The chromosome to extract
     chrom = other_opts.chrom
 
-    # Reading all the files
-    for i_filename in i_filenames:
-        logging.info("Converting '{}'".format(i_filename))
+    # The output filenames
+    o_filenames = [
+        os.path.join(
+            out_dir,
+            os.path.basename(os.path.splitext(fn)[0]),
+        ) + o_suffix + ".csv" for fn in i_filenames
+    ]
 
+    # Reading all the files
+    for i_filename, o_filename in zip(i_filenames, o_filenames):
+        logging.info("Extracting from '{}'".format(i_filename))
+
+        # The number of extracted markers
+        nb_extracted_markers = 0
+
+        # Reading the file
         with open(i_filename, "r") as i_file:
             # The number of markers and samples
             nb_markers = None
@@ -274,24 +280,6 @@ def extract_beeline(i_filenames, o_filename, locations, other_opts):
                 if line.startswith(other_opts.nb_snps_kw):
                     nb_markers = int(line.rstrip("\r\n").split(",")[-1])
                 line = i_file.readline()
-
-            if nb_markers is None:
-                raise ProgramError(
-                    "{}: invalid header (missing '{}' value)".format(
-                        i_filename,
-                        other_opts.nb_snps_kw,
-                    )
-                )
-
-            # Checking the number of markers
-            if all_nb_markers is None:
-                all_nb_markers = nb_markers
-            if nb_markers != all_nb_markers:
-                raise ProgramError(
-                    "{}: not same number of markers as other "
-                    "report(s)".format(i_filename)
-                )
-            logging.info("There are {:,d} markers".format(nb_markers))
 
             # Reading and checking the header
             header_line = i_file.readline()
@@ -320,7 +308,6 @@ def extract_beeline(i_filenames, o_filename, locations, other_opts):
 
             # Reading the first data line
             line = i_file.readline()
-            row = line.rstrip("\r\n").split(",")
 
             with open(o_filename, "w") as o_file:
                 # Writing the header
@@ -328,7 +315,6 @@ def extract_beeline(i_filenames, o_filename, locations, other_opts):
 
                 while line != "":
                     # Reading the next line
-                    line = i_file.readline()
                     row = line.rstrip("\r\n").split(",")
 
                     # Getting the marker information
@@ -343,8 +329,17 @@ def extract_beeline(i_filenames, o_filename, locations, other_opts):
                         # We need this marker, we write the line
                         o_file.write(to_add + line)
 
-                        # Updating the extracted markers
-                        extracted_markers.add(marker)
+                        # Updating the number of extracted markers
+                        nb_extracted_markers += 1
+
+                    # Reading the next line
+                    line = i_file.readline()
+
+        # Logging
+        logging.info("  - {:,d} markers in '{}'".format(
+            nb_extracted_markers,
+            o_filename,
+        ))
 
 
 def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
@@ -483,21 +478,21 @@ def check_args(args):
                     name,
                 ))
 
-    # These options are specific to the convert analysis
-    if args.analysis_type == "convert":
-        # Checking we can write to the output directory (if required)
-        if args.output_dir is not None:
-            if not os.path.isdir(args.output_dir):
-                raise ProgramError(
-                    "{}: no such directory".format(args.output_dir)
-                )
-            try:
-                with NamedTemporaryFile(dir=args.output_dir) as tmp_file:
-                    pass
-            except OSError:
-                raise ProgramError(
-                    "{}: not writable".format(args.output_dir)
-                )
+    # Checking we can write to the output directory (if required)
+    if args.output_dir is not None:
+        if not os.path.isdir(args.output_dir):
+            raise ProgramError(
+                "{}: no such directory".format(args.output_dir)
+            )
+        try:
+            with NamedTemporaryFile(dir=args.output_dir) as tmp_file:
+                pass
+        except OSError:
+            raise ProgramError(
+                "{}: not writable".format(args.output_dir)
+            )
+    else:
+        args.output_dir = "."
 
     # These options are specific to the extract analysis
     if args.analysis_type == "extract":
@@ -507,15 +502,6 @@ def check_args(args):
             if chrom == 0:
                 raise ProgramError("{}: invalid chromosome".format(o_chrom))
         args.chrom = set(e_chrom)
-
-        # Checking that we can write the file
-        try:
-            with open(args.o_filename, "w") as o_file:
-                pass
-        except OSError:
-            raise ProgramError(
-                "{}: not writable".format(args.o_filename)
-            )
 
 
 def parse_args(parser):
@@ -613,6 +599,17 @@ def parse_args(parser):
              "[%(default)s]",
     )
 
+    # The output options
+    group = p_parser.add_argument_group("Output Directory")
+    group.add_argument(
+        "-o",
+        "--output-dir",
+        type=str,
+        metavar="DIR",
+        dest="output_dir",
+        help="The output directory (default is working directory)",
+    )
+
     # Adding sub parsers
     subparsers = parser.add_subparsers(
         title="Analysis Type",
@@ -630,17 +627,6 @@ def parse_args(parser):
         description="Conversion from the Beeline long report format to other, "
                     "more commonly used, format (such as Plink).",
         parents=[p_parser],
-    )
-
-    # The output options
-    group = convert_parser.add_argument_group("Output Options")
-    group.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        metavar="DIR",
-        dest="output_dir",
-        help="The output directory (default is working directory)",
     )
 
     # The extract parser
@@ -665,13 +651,13 @@ def parse_args(parser):
     # The output options
     group = extract_parser.add_argument_group("Output Options")
     group.add_argument(
-        "-o",
-        "--output",
+        "-s",
+        "--suffix",
         type=str,
-        metavar="CSV",
-        dest="o_filename",
-        default="beeline_extract.csv",
-        help="The name of the output file [%(default)s]",
+        metavar="STR",
+        dest="o_suffix",
+        default="extract",
+        help="The suffix to add to the output file(s) [%(default)s]",
     )
 
     # Parsing and returning the arguments and options
