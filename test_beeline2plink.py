@@ -1138,6 +1138,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.pos_col = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
 
         # Executing the function
         beeline2plink.check_args(args)
@@ -1319,6 +1320,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.pos_col = "MapInfo"
         args.output_dir = missing_directory
         args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
 
         # Executing the function
         self.assertFalse(os.path.isdir(missing_directory))
@@ -1375,6 +1377,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.pos_col = "MapInfo"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
 
         # Executing the function
         try:
