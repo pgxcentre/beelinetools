@@ -577,7 +577,8 @@ def parse_args(parser):
         dest="i_filenames",
         required=True,
         nargs="+",
-        help="The name of the input file(s).",
+        help="The name of the input file(s). Use '-' only once to read on the "
+             "standard input (STDIN).",
     )
     group.add_argument(
         "-m",
