@@ -1,11 +1,11 @@
-[![Build Status](https://travis-ci.org/pgxcentre/beeline2plink.svg?branch=master)](https://travis-ci.org/pgxcentre/beeline2plink)
+[![Build Status](https://travis-ci.org/pgxcentre/beelinetools.svg?branch=master)](https://travis-ci.org/pgxcentre/beelinetools)
 
 
-# beeline2plink - Converting Illumina's beeline to Plink format
+# beelinetools - Converting Illumina's beeline to Plink format
 
 *Version 0.1.1*
 
-The `beeline2plink` script perform conversion from the Beeline final report
+The `beelinetools` script perform conversion from the Beeline final report
 (long format) to the Plink format.
 
 The script works on both **Python 2.7 and higher**, and **Python 3.3 and
@@ -19,8 +19,8 @@ Running the script with with the `-h` or `--help` flag will provide usage
 information.
 
 ```console
-$ python beeline2plink.py --help
-usage: beeline2plink.py [-h] [-v] -i FILE [FILE ...] -m FILE [--id-col COL]
+$ python beelinetools.py --help
+usage: beelinetools.py [-h] [-v] -i FILE [FILE ...] -m FILE [--id-col COL]
                         [--chr-col COL] [--pos-col COL] [--delim SEP] [-o DIR]
 
 Convert beeline report(s) into Plink readable files (version 0.1.1)
@@ -52,7 +52,7 @@ Output Options:
 To test the script, perform the following command:
 
 ```console
-$ python test_beeline2plink.py 
+$ python test_beelinetools.py 
 .............
 ----------------------------------------------------------------------
 Ran 13 tests in 0.015s

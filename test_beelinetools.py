@@ -1,4 +1,4 @@
-"""Tests the beeline2plink script."""
+"""Tests the beelinetools script."""
 
 
 from __future__ import print_function
@@ -20,7 +20,7 @@ try:
 except ImportError:
     from io import StringIO
 
-import beeline2plink
+import beelinetools
 
 
 class _DummyArgs(object):
@@ -30,7 +30,7 @@ class _DummyArgs(object):
 class TestBeeline2Plink(unittest.TestCase):
     def setUp(self):
         """Setup the tests."""
-        self.tmp_dir = mkdtemp(prefix="beeline2plink_test_")
+        self.tmp_dir = mkdtemp(prefix="beelinetools_test_")
 
     def tearDown(self):
         """Finishes the tests."""
@@ -49,34 +49,34 @@ class TestBeeline2Plink(unittest.TestCase):
         """Tests the 'encode_chromosome' function."""
         # Testing all valid chromosome
         for chrom in range(1, 27):
-            observed = beeline2plink.encode_chromosome(str(chrom))
+            observed = beelinetools.encode_chromosome(str(chrom))
             self.assertEqual(chrom, observed)
 
         # Testing X chromosome
         for chrom in ("x", "X", "23"):
-            observed = beeline2plink.encode_chromosome(chrom)
+            observed = beelinetools.encode_chromosome(chrom)
             self.assertEqual(23, observed)
 
         # Testing the Y chromosome
         for chrom in ("y", "Y", "24"):
-            observed = beeline2plink.encode_chromosome(chrom)
+            observed = beelinetools.encode_chromosome(chrom)
             self.assertEqual(24, observed)
 
         # Testing the pseudo autosomal region
         for chrom in ("XY", "YX", "25"):
-            observed = beeline2plink.encode_chromosome(chrom)
+            observed = beelinetools.encode_chromosome(chrom)
             self.assertEqual(25, observed)
 
         # Testing the mitochondrial chromosome
         for chrom in ("M", "MT", "26"):
-            observed = beeline2plink.encode_chromosome(chrom)
+            observed = beelinetools.encode_chromosome(chrom)
             self.assertEqual(26, observed)
 
     def test_encode_chromosome_invalid(self):
         """Tests the 'encode_chromosome' function for invalid chromosome."""
         # Testing invalid chromosome
         for chrom in ("-9", "0", "27"):
-            observed = beeline2plink.encode_chromosome(chrom)
+            observed = beelinetools.encode_chromosome(chrom)
             self.assertEqual(0, observed)
 
     def test_get_header(self):
@@ -95,13 +95,13 @@ class TestBeeline2Plink(unittest.TestCase):
         # Reading until the header (with good separator)
         expected = {"header_{}".format(i+1): i for i in range(3)}
         with open(tmp_filename, "r") as i_file:
-            observed = beeline2plink.get_header(i_file)
+            observed = beelinetools.get_header(i_file)
         self.assertEqual(expected, observed)
 
         # Reading until the header (with bas separator)
         expected = {"header_1,header_2,header_3": 0}
         with open(tmp_filename, "r") as i_file:
-            observed = beeline2plink.get_header(i_file, delim="\t")
+            observed = beelinetools.get_header(i_file, delim="\t")
         self.assertEqual(expected, observed)
 
     def test_get_header_error(self):
@@ -119,8 +119,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # This should raise an exception
         with open(tmp_filename, "r") as i_file:
-            with self.assertRaises(beeline2plink.ProgramError) as e:
-                beeline2plink.get_header(i_file, data_delim="[Assay]")
+            with self.assertRaises(beelinetools.ProgramError) as e:
+                beelinetools.get_header(i_file, data_delim="[Assay]")
         self.assertEqual("{}: no data in file".format(tmp_filename),
                          e.exception.message)
 
@@ -131,8 +131,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # This should raise an exception
         with open(tmp_filename, "r") as i_file:
-            with self.assertRaises(beeline2plink.ProgramError) as e:
-                beeline2plink.get_header(i_file)
+            with self.assertRaises(beelinetools.ProgramError) as e:
+                beelinetools.get_header(i_file)
         self.assertEqual(
             "{}: no data after 1000 lines".format(tmp_filename),
             e.exception.message,
@@ -152,13 +152,13 @@ class TestBeeline2Plink(unittest.TestCase):
                 chrom = random.randint(1, 26)
                 pos = random.randint(1, 3000000)
                 print(marker_name, chrom, pos, sep=",", file=f)
-                expected[marker_name] = beeline2plink._Location(
+                expected[marker_name] = beelinetools._Location(
                     chrom=chrom,
                     pos=pos,
                 )
 
         # Getting the expected data
-        observed = beeline2plink.read_mapping_info(
+        observed = beelinetools.read_mapping_info(
             i_filename=tmp_filename,
             delim=",",
             id_col="Name",
@@ -172,10 +172,10 @@ class TestBeeline2Plink(unittest.TestCase):
             print("added_marker,1,1", file=o_file)
             print("[Controls],,,", file=o_file)
             print("skipped_line", file=o_file)
-        expected["added_marker"] = beeline2plink._Location(chrom=1, pos=1)
+        expected["added_marker"] = beelinetools._Location(chrom=1, pos=1)
 
         # Getting the expected data
-        observed = beeline2plink.read_mapping_info(
+        observed = beelinetools.read_mapping_info(
             i_filename=tmp_filename,
             delim=",",
             id_col="Name",
@@ -287,7 +287,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -295,7 +295,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
-        beeline2plink.convert_beeline(
+        beelinetools.convert_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
             locations=mapping_info,
@@ -384,7 +384,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -507,7 +507,7 @@ class TestBeeline2Plink(unittest.TestCase):
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
-        beeline2plink.extract_beeline(
+        beelinetools.extract_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
             o_suffix="_test_extract",
@@ -640,7 +640,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -648,7 +648,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num SNPs"
-        beeline2plink.convert_beeline(
+        beelinetools.convert_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
             locations=mapping_info,
@@ -781,7 +781,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -789,8 +789,8 @@ class TestBeeline2Plink(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.convert_beeline(
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
@@ -859,7 +859,7 @@ class TestBeeline2Plink(unittest.TestCase):
         for i in range(nb_markers):
             if i + 1 == 3:
                 continue
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -868,7 +868,7 @@ class TestBeeline2Plink(unittest.TestCase):
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
-            beeline2plink.convert_beeline(
+            beelinetools.convert_beeline(
                 i_filenames=[tmp_filename],
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
@@ -1014,7 +1014,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -1022,8 +1022,8 @@ class TestBeeline2Plink(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.convert_beeline(
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
@@ -1088,7 +1088,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -1096,8 +1096,8 @@ class TestBeeline2Plink(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.convert_beeline(
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
@@ -1169,7 +1169,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -1177,8 +1177,8 @@ class TestBeeline2Plink(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.convert_beeline(
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
@@ -1244,7 +1244,7 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
-            mapping_info["marker_{}".format(i + 1)] = beeline2plink._Location(
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
             )
@@ -1252,8 +1252,8 @@ class TestBeeline2Plink(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.convert_beeline(
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
                 out_dir=self.tmp_dir,
                 locations=mapping_info,
@@ -1308,7 +1308,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.analysis_type = "convert"
 
         # Executing the function
-        beeline2plink.check_args(args)
+        beelinetools.check_args(args)
 
     def test_check_args_extract(self):
         """Tests the 'check_args' function for extraction."""
@@ -1354,7 +1354,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chrom = ["1", "2", "X"]
 
         # Executing the function
-        beeline2plink.check_args(args)
+        beelinetools.check_args(args)
 
     def test_check_args_convert_error_1(self):
         """Tests the 'check_args' function (missing beeline report(s))."""
@@ -1401,8 +1401,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # Executing the function
         self.assertFalse(os.path.isfile(beeline_reports[2]))
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             beeline_reports[2] + ": no such file",
             e.exception.message,
@@ -1454,8 +1454,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # Executing the function
         self.assertFalse(os.path.isfile(beeline_reports[2]))
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             beeline_reports[2] + ": no such file",
             e.exception.message,
@@ -1489,8 +1489,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # Executing the function
         self.assertFalse(os.path.isfile(map_filename))
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             map_filename + ": no such file",
             e.exception.message,
@@ -1525,8 +1525,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # Executing the function
         self.assertFalse(os.path.isfile(map_filename))
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             map_filename + ": no such file",
             e.exception.message,
@@ -1575,8 +1575,8 @@ class TestBeeline2Plink(unittest.TestCase):
         args.analysis_type = "convert"
 
         # Executing the function
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             map_filename + ": missing column 'Chromosome'",
             e.exception.message,
@@ -1626,8 +1626,8 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chrom = ["Y"]
 
         # Executing the function
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             map_filename + ": missing column 'Chromosome'",
             e.exception.message,
@@ -1680,8 +1680,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # Executing the function
         self.assertFalse(os.path.isdir(missing_directory))
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             missing_directory + ": no such directory",
             e.exception.message,
@@ -1735,8 +1735,8 @@ class TestBeeline2Plink(unittest.TestCase):
 
         # Executing the function
         self.assertFalse(os.path.isdir(missing_directory))
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             missing_directory + ": no such directory",
             e.exception.message,
@@ -1796,8 +1796,8 @@ class TestBeeline2Plink(unittest.TestCase):
             os.chmod(output_directory, 0o111)
 
             # Checking the arguments
-            with self.assertRaises(beeline2plink.ProgramError) as e:
-                beeline2plink.check_args(args)
+            with self.assertRaises(beelinetools.ProgramError) as e:
+                beelinetools.check_args(args)
             self.assertEqual(
                 output_directory + ": not writable",
                 e.exception.message,
@@ -1862,8 +1862,8 @@ class TestBeeline2Plink(unittest.TestCase):
             os.chmod(output_directory, 0o111)
 
             # Checking the arguments
-            with self.assertRaises(beeline2plink.ProgramError) as e:
-                beeline2plink.check_args(args)
+            with self.assertRaises(beelinetools.ProgramError) as e:
+                beelinetools.check_args(args)
             self.assertEqual(
                 output_directory + ": not writable",
                 e.exception.message,
@@ -1921,8 +1921,8 @@ class TestBeeline2Plink(unittest.TestCase):
         args.chrom = ["1", "Y", "Z", "2"]
 
         # Checking the arguments
-        with self.assertRaises(beeline2plink.ProgramError) as e:
-            beeline2plink.check_args(args)
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
         self.assertEqual(
             "Z: invalid chromosome",
             e.exception.message,
