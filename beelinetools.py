@@ -271,11 +271,8 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
             # The number of markers and samples
             nb_markers = None
 
-            # Reading the assay information (and saving it)
+            # Getting to the data
             line = i_file.readline()
-            while not line.startswith("[Header]"):
-                line = i_file.readline()
-
             while not line.startswith("[Data]"):
                 if line.startswith(other_opts.nb_snps_kw):
                     nb_markers = int(line.rstrip("\r\n").split(",")[-1])
