@@ -33,8 +33,8 @@ def main():
     )
 
     # The parser
-    desc = ("Convert beeline report(s) into Plink readable files "
-            "(version {})".format(__version__))
+    desc = ("Performs different tasks on Illumina's beeline report(s) "
+            "(version {}).".format(__version__))
     parser = argparse.ArgumentParser(description=desc)
 
     try:
@@ -625,7 +625,8 @@ def parse_args(parser):
         "convert",
         help="Converts the Beeline long report to other format.",
         description="Conversion from the Beeline long report format to other, "
-                    "more commonly used, format (such as Plink).",
+                    "more commonly used, format (such as Plink) "
+                    "(version {}).".format(__version__),
         parents=[p_parser],
     )
 
@@ -633,7 +634,8 @@ def parse_args(parser):
     extract_parser = subparsers.add_parser(
         "extract",
         help="Extract information from the Beeline long report.",
-        description="Extracts information from a Beeline long report.",
+        description="Extracts information from a Beeline long report "
+                    "(version {}).".format(__version__),
         parents=[p_parser],
     )
 
