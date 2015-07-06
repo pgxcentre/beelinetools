@@ -1,16 +1,17 @@
-[![Build Status](https://travis-ci.org/pgxcentre/beeline2plink.svg?branch=master)](https://travis-ci.org/pgxcentre/beeline2plink)
+[![Build Status](https://travis-ci.org/pgxcentre/beelinetools.svg?branch=master)](https://travis-ci.org/pgxcentre/beelinetools)
 
 
-# beeline2plink - Converting Illumina's beeline to Plink format
+# beelinetools - A toolkit to work with Illumina's beeline reports
 
 *Version 0.1.1*
 
-The `beeline2plink` script perform conversion from the Beeline final report
-(long format) to the Plink format.
+The `beelinetools` script perform different tasks on Illumina's Beeline final
+report (long format). Such tasks include conversion to the Plink format and
+data extraction.
 
 The script works on both **Python 2.7 and higher**, and **Python 3.3 and
 higher**. It has been developed and tested under Linux operating system, but
-should still work on MacOS X and Windows operating systems.
+should work on MacOS X and Windows operating systems.
 
 
 ## Usage
@@ -19,11 +20,42 @@ Running the script with with the `-h` or `--help` flag will provide usage
 information.
 
 ```console
-$ python beeline2plink.py --help
-usage: beeline2plink.py [-h] [-v] -i FILE [FILE ...] -m FILE [--id-col COL]
-                        [--chr-col COL] [--pos-col COL] [--delim SEP] [-o DIR]
+$ ./beelinetools.py --help
+usage: beelinetools.py [-h] [-v] {convert,extract} ...
 
-Convert beeline report(s) into Plink readable files (version 0.1.1)
+Performs different tasks on Illumina's beeline report(s) (version 0.1.1).
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -v, --version      show program's version number and exit
+
+Analysis Type:
+  The type of analysis to be performed on the Beeline (long) report. The
+  following list of analysis is available.
+
+  {convert,extract}
+    convert          Converts the Beeline long report to other format.
+    extract          Extract information from the Beeline long report.
+```
+
+For now, only two analysis types are available: conversion (from Beeline to
+Plink) and extraction of data on user defined chromosomes.
+
+
+### Report conversion
+
+It is possible to convert Illumina's Beeline report to Plink's pedfile for
+downstream analysis. For more information, use the `-h` or `--help` option of
+the `convert` analysis type.
+
+```console
+$ beelinetools.py convert --help
+usage: beelinetools.py convert [-h] [-v] -i FILE [FILE ...] -m FILE
+                               [--id-col COL] [--chr-col COL] [--pos-col COL]
+                               [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
+
+Conversion from the Beeline long report format to other, more commonly used,
+format (such as Plink) (version 0.1.1).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -41,9 +73,65 @@ Mapping Options:
   --pos-col COL         The name of the column containing the position
                         [MapInfo]
   --delim SEP           The field delimiter [,]
+  --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
+                        for the report(s) (useful if beeline header format
+                        changes) [Num Used SNPs]
+
+Output Directory:
+  -o DIR, --output-dir DIR
+                        The output directory (default is working directory)
+```
+
+
+### Report extraction
+
+Data extraction is possible by using the `extract` analysis type. Extraction of
+multiple chromosomes is possible. Note that, for now, the report created is no
+longer compatible with `beelinetools`. For more information, use the `-h` or
+`--help` options.
+
+```console
+$ beelinetools.py extract --help
+usage: beelinetools.py extract [-h] [-v] -i FILE [FILE ...] -m FILE
+                               [--id-col COL] [--chr-col COL] [--pos-col COL]
+                               [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
+                               [-c CHROM [CHROM ...]] [-s STR]
+
+Extracts information from a Beeline long report (version 0.1.1).
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+
+Input Files:
+  -i FILE [FILE ...], --input FILE [FILE ...]
+                        The name of the input file(s).
+  -m FILE, --map FILE   The name of the file containing mapping information.
+
+Mapping Options:
+  --id-col COL          The name of the column containing the marker
+                        identification numbers [Name]
+  --chr-col COL         The name of the column containing the chromosome [Chr]
+  --pos-col COL         The name of the column containing the position
+                        [MapInfo]
+  --delim SEP           The field delimiter [,]
+  --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
+                        for the report(s) (useful if beeline header format
+                        changes) [Num Used SNPs]
+
+Output Directory:
+  -o DIR, --output-dir DIR
+                        The output directory (default is working directory)
+
+Extraction Options:
+  -c CHROM [CHROM ...], --chr CHROM [CHROM ...]
+                        The chromosome to extract ['1', '2', '3', '4', '5',
+                        '6', '7', '8', '9', '10', '11', '12', '13', '14',
+                        '15', '16', '17', '18', '19', '20', '21', '22', '23',
+                        '24', '25', '26']
 
 Output Options:
-  -o DIR, --output DIR  The output directory (default is working directory)
+  -s STR, --suffix STR  The suffix to add to the output file(s) [extract]
 ```
 
 
@@ -52,10 +140,10 @@ Output Options:
 To test the script, perform the following command:
 
 ```console
-$ python test_beeline2plink.py 
-.............
+$ python test_beelinetools.py 
+...........................
 ----------------------------------------------------------------------
-Ran 13 tests in 0.015s
+Ran 27 tests in 0.030s
 
 OK
 ```

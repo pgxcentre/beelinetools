@@ -8,8 +8,8 @@ import os
 import sys
 import logging
 import argparse
-import tempfile
 from collections import namedtuple
+from tempfile import NamedTemporaryFile
 
 
 __author__ = "Louis-Philippe Lemieux Perreault"
@@ -33,8 +33,8 @@ def main():
     )
 
     # The parser
-    desc = ("Convert beeline report(s) into Plink readable files "
-            "(version {})".format(__version__))
+    desc = ("Performs different tasks on Illumina's beeline report(s) "
+            "(version {}).".format(__version__))
     parser = argparse.ArgumentParser(description=desc)
 
     try:
@@ -51,13 +51,24 @@ def main():
             pos_col=args.pos_col,
         )
 
-        # Converting the beeline report(s)
-        convert_beeline(
-            i_filenames=args.i_filenames,
-            out_dir=args.output_dir,
-            locations=map_data,
-            other_opts=args,
-        )
+        if args.analysis_type == "convert":
+            # Converting the beeline report(s)
+            convert_beeline(
+                i_filenames=args.i_filenames,
+                out_dir=args.output_dir,
+                locations=map_data,
+                other_opts=args,
+            )
+
+        elif args.analysis_type == "extract":
+            # Extracting from the beeline report(s)
+            extract_beeline(
+                i_filenames=args.i_filenames,
+                out_dir=args.output_dir,
+                o_suffix=args.o_suffix,
+                locations=map_data,
+                other_opts=args,
+            )
 
     except KeyboardInterrupt:
         logging.info("Cancelled by user")
@@ -77,7 +88,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
 
     Args:
         i_filenames (list): a list of file names (str)
-        out_dir (str): the name of the output directoy
+        out_dir (str): the name of the output directory
         locations (dict): a dictionary from marker ID to genomic location
         other_opts(argparse.Namespace): the program options
 
@@ -136,9 +147,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             row = line.rstrip("\r\n").split(",")
 
             # The pedfile
-            pedfile = o_filename + ".ped"
-            if out_dir is not None:
-                pedfile = os.path.join(out_dir, pedfile)
+            pedfile = os.path.join(out_dir, o_filename + ".ped")
             with open(pedfile, "w") as pedfile:
                 while line != "":
                     # Getting the marker name and sample id
@@ -214,9 +223,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             logging.info("Done writing {:,d} samples".format(nb_samples))
 
         # Printing the map file
-        map_filename = o_filename + ".map"
-        if out_dir is not None:
-            map_filename = os.path.join(out_dir, map_filename)
+        map_filename = os.path.join(out_dir, o_filename + ".map")
         with open(map_filename, "w") as o_file:
             for marker in all_markers:
                 marker_location = None
@@ -228,6 +235,111 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                                     "information".format(marker))
                 print(marker_location.chrom, marker, "0",
                       marker_location.pos, sep="\t", file=o_file)
+
+
+def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
+    """Extracts information from beeline report(s).
+
+    Args:
+        i_filenames (list): a list of file names (str)
+        out_dir (str): the name of the output directory
+        o_suffix (str): the suffix to add to the output file(s)
+        locations (dict): a dictionary from marker ID to genomic location
+        other_opts(argparse.Namespace): the program options
+
+    """
+    # The chromosome to extract
+    chrom = other_opts.chrom
+
+    # The output filenames
+    o_filenames = [
+        os.path.join(
+            out_dir,
+            os.path.basename(os.path.splitext(fn)[0]),
+        ) + o_suffix + ".csv" for fn in i_filenames
+    ]
+
+    # Reading all the files
+    for i_filename, o_filename in zip(i_filenames, o_filenames):
+        logging.info("Extracting from '{}'".format(i_filename))
+
+        # The number of extracted markers
+        nb_extracted_markers = 0
+
+        # Reading the file
+        with open(i_filename, "r") as i_file:
+            # The number of markers and samples
+            nb_markers = None
+
+            # Reading the assay information (and saving it)
+            line = i_file.readline()
+            while not line.startswith("[Header]"):
+                line = i_file.readline()
+
+            while not line.startswith("[Data]"):
+                if line.startswith(other_opts.nb_snps_kw):
+                    nb_markers = int(line.rstrip("\r\n").split(",")[-1])
+                line = i_file.readline()
+
+            # Reading and checking the header
+            header_line = i_file.readline()
+            header = {
+                name: i for i, name in
+                enumerate(header_line.rstrip("\r\n").split(","))
+            }
+            required_columns = ("SNP Name", )
+            for name in required_columns:
+                if name not in header:
+                    raise ProgramError(
+                        "{}: '{}': missing column".format(i_filename, name),
+                    )
+            # We will add chromosome (Chr) and position (Position) to the
+            # header (to add in the file) if not present
+            to_add = ""
+            name_to_add = set()
+            for name in ("Chr", "Position"):
+                if name not in header:
+                    to_add += name + ","
+                    name_to_add.add(name)
+            new_header_line = to_add + header_line
+
+            # The number of samples
+            nb_samples = 0
+
+            # Reading the first data line
+            line = i_file.readline()
+
+            with open(o_filename, "w") as o_file:
+                # Writing the header
+                o_file.write(new_header_line)
+
+                while line != "":
+                    # Reading the next line
+                    row = line.rstrip("\r\n").split(",")
+
+                    # Getting the marker information
+                    marker = row[header["SNP Name"]]
+                    marker_location = locations.get(marker, _unknown_location)
+                    if marker_location.chrom in chrom:
+                        to_add = ""
+                        if "Chr" in name_to_add:
+                            to_add += "{},".format(marker_location.chrom)
+                        if "Position" in name_to_add:
+                            to_add += "{},".format(marker_location.pos)
+                        # We need this marker, we write the line
+                        o_file.write(to_add + line)
+
+                        # Updating the number of extracted markers
+                        nb_extracted_markers += 1
+
+                    # Reading the next line
+                    line = i_file.readline()
+
+        # Logging
+        logging.info("  - {:,d} markers in '{}'".format(
+            nb_extracted_markers,
+            o_filename,
+        ))
 
 
 def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
@@ -369,12 +481,27 @@ def check_args(args):
     # Checking we can write to the output directory (if required)
     if args.output_dir is not None:
         if not os.path.isdir(args.output_dir):
-            raise ProgramError("{}: no such directory".format(args.output_dir))
+            raise ProgramError(
+                "{}: no such directory".format(args.output_dir)
+            )
         try:
-            with tempfile.NamedTemporaryFile(dir=args.output_dir) as tmp_file:
+            with NamedTemporaryFile(dir=args.output_dir) as tmp_file:
                 pass
         except OSError:
-            raise ProgramError("{}: not writable".format(args.output_dir))
+            raise ProgramError(
+                "{}: not writable".format(args.output_dir)
+            )
+    else:
+        args.output_dir = "."
+
+    # These options are specific to the extract analysis
+    if args.analysis_type == "extract":
+        # Checking the chromosomes
+        e_chrom = [encode_chromosome(chrom) for chrom in args.chrom]
+        for chrom, o_chrom in zip(e_chrom, args.chrom):
+            if chrom == 0:
+                raise ProgramError("{}: invalid chromosome".format(o_chrom))
+        args.chrom = set(e_chrom)
 
 
 def parse_args(parser):
@@ -396,11 +523,21 @@ def parse_args(parser):
         "-v",
         "--version",
         action="version",
-        version="$(prog)s version {}".format(__version__),
+        version="%(prog)s version {}".format(__version__),
+    )
+
+    # Creating a parent parser (for common options between analysis type)
+    p_parser = argparse.ArgumentParser(add_help=False)
+
+    p_parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version="%(prog)s version {}".format(__version__),
     )
 
     # The input files
-    group = parser.add_argument_group("Input Files")
+    group = p_parser.add_argument_group("Input Files")
     group.add_argument(
         "-i",
         "--input",
@@ -422,7 +559,7 @@ def parse_args(parser):
     )
 
     # The mapping options
-    group = parser.add_argument_group("Mapping Options")
+    group = p_parser.add_argument_group("Mapping Options")
     group.add_argument(
         "--id-col",
         type=str,
@@ -463,14 +600,66 @@ def parse_args(parser):
     )
 
     # The output options
-    group = parser.add_argument_group("Output Options")
+    group = p_parser.add_argument_group("Output Directory")
     group.add_argument(
         "-o",
-        "--output",
+        "--output-dir",
         type=str,
         metavar="DIR",
         dest="output_dir",
         help="The output directory (default is working directory)",
+    )
+
+    # Adding sub parsers
+    subparsers = parser.add_subparsers(
+        title="Analysis Type",
+        description="The type of analysis to be performed on the Beeline "
+                    "(long) report. The following list of analysis is "
+                    "available.",
+        dest="analysis_type",
+    )
+    subparsers.required = True
+
+    # The convert parser
+    convert_parser = subparsers.add_parser(
+        "convert",
+        help="Converts the Beeline long report to other format.",
+        description="Conversion from the Beeline long report format to other, "
+                    "more commonly used, format (such as Plink) "
+                    "(version {}).".format(__version__),
+        parents=[p_parser],
+    )
+
+    # The extract parser
+    extract_parser = subparsers.add_parser(
+        "extract",
+        help="Extract information from the Beeline long report.",
+        description="Extracts information from a Beeline long report "
+                    "(version {}).".format(__version__),
+        parents=[p_parser],
+    )
+
+    # The extraction options
+    group = extract_parser.add_argument_group("Extraction Options")
+    group.add_argument(
+        "-c",
+        "--chr",
+        nargs="+",
+        dest="chrom",
+        default=[str(encode_chromosome(str(chrom))) for chrom in range(1, 27)],
+        help="The chromosome to extract %(default)s",
+    )
+
+    # The output options
+    group = extract_parser.add_argument_group("Output Options")
+    group.add_argument(
+        "-s",
+        "--suffix",
+        type=str,
+        metavar="STR",
+        dest="o_suffix",
+        default="extract",
+        help="The suffix to add to the output file(s) [%(default)s]",
     )
 
     # Parsing and returning the arguments and options
