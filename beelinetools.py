@@ -99,7 +99,17 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
         # Getting the output filename
         o_filename = os.path.splitext(os.path.basename(i_filename))[0]
 
-        with open(i_filename, "r") as i_file:
+        # Opening the file
+        i_file = None
+        if i_filename != "-":
+            i_file = open(i_filename, "r")
+
+        else:
+            i_file = sys.stdin
+            o_filename = "from_stdin"
+
+        # Reading the file (or STDIN)
+        try:
             # The number of markers and samples
             nb_markers = None
 
@@ -222,6 +232,9 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             # Closing the output files
             logging.info("Done writing {:,d} samples".format(nb_samples))
 
+        finally:
+            i_file.close()
+
         # Printing the map file
         map_filename = os.path.join(out_dir, o_filename + ".map")
         with open(map_filename, "w") as o_file:
@@ -251,23 +264,30 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
     # The chromosome to extract
     chrom = other_opts.chrom
 
-    # The output filenames
-    o_filenames = [
-        os.path.join(
-            out_dir,
-            os.path.basename(os.path.splitext(fn)[0]),
-        ) + o_suffix + ".csv" for fn in i_filenames
-    ]
-
     # Reading all the files
-    for i_filename, o_filename in zip(i_filenames, o_filenames):
+    for i_filename in i_filenames:
         logging.info("Extracting from '{}'".format(i_filename))
 
         # The number of extracted markers
         nb_extracted_markers = 0
 
+        # Getting the output filename
+        o_filename = os.path.join(
+            out_dir,
+            os.path.basename(os.path.splitext(i_filename)[0]),
+        ) + o_suffix + ".csv"
+
+        # Opening the file
+        i_file = None
+        if i_filename != "-":
+            i_file = open(i_filename, "r")
+
+        else:
+            i_file = sys.stdin
+            o_filename = "from_stdin" + o_suffix + ".csv"
+
         # Reading the file
-        with open(i_filename, "r") as i_file:
+        try:
             # The number of markers and samples
             nb_markers = None
 
@@ -331,6 +351,9 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
 
                     # Reading the next line
                     line = i_file.readline()
+
+        finally:
+            i_file.close()
 
         # Logging
         logging.info("  - {:,d} markers in '{}'".format(
@@ -454,9 +477,20 @@ def check_args(args):
 
     """
     # Checking the input file(s)
-    for filename in args.i_filenames:
-        if not os.path.isfile(filename):
-            raise ProgramError("{}: no such file".format(filename))
+    if (len(args.i_filenames) == 1) and (args.i_filenames[0] == "-"):
+        # Checking if we have only one input file and its '-' (stdin)
+        logging.info("Beeline report will be read from STDIN")
+
+    else:
+        for filename in args.i_filenames:
+            if not os.path.isfile(filename):
+                raise ProgramError("{}: no such file".format(filename))
+
+            # Checking if the file is gzip
+            if filename.endswith(".gz"):
+                raise ProgramError(
+                    "{}: GZIP not yet implemented (use '-')".format(filename)
+                )
 
     # Checking the map file
     if not os.path.isfile(args.map_filename):
@@ -655,7 +689,7 @@ def parse_args(parser):
         type=str,
         metavar="STR",
         dest="o_suffix",
-        default="extract",
+        default="_extract",
         help="The suffix to add to the output file(s) [%(default)s]",
     )
 
