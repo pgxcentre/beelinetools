@@ -3,7 +3,7 @@
 
 # beelinetools - A toolkit to work with Illumina's beeline reports
 
-*Version 0.2.0*
+*Version 0.2.1*
 
 The `beelinetools` script perform different tasks on Illumina's Beeline final
 report (long format). Such tasks include conversion to the Plink format and
@@ -20,10 +20,10 @@ Running the script with with the `-h` or `--help` flag will provide usage
 information.
 
 ```console
-$ ./beelinetools.py --help
+$ beelinetools.py --help
 usage: beelinetools.py [-h] [-v] {convert,extract} ...
 
-Performs different tasks on Illumina's beeline report(s) (version 0.2.0).
+Performs different tasks on Illumina's beeline report(s) (version 0.2.1).
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -55,7 +55,7 @@ usage: beelinetools.py convert [-h] [-v] -i FILE [FILE ...] -m FILE
                                [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
 
 Conversion from the Beeline long report format to other, more commonly used,
-format (such as Plink) (version 0.2.0).
+format (such as Plink) (version 0.2.1).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -63,7 +63,8 @@ optional arguments:
 
 Input Files:
   -i FILE [FILE ...], --input FILE [FILE ...]
-                        The name of the input file(s).
+                        The name of the input file(s). Use '-' only once to
+                        read on the standard input (STDIN).
   -m FILE, --map FILE   The name of the file containing mapping information.
 
 Mapping Options:
@@ -97,7 +98,7 @@ usage: beelinetools.py extract [-h] [-v] -i FILE [FILE ...] -m FILE
                                [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
                                [-c CHROM [CHROM ...]] [-s STR]
 
-Extracts information from a Beeline long report (version 0.2.0).
+Extracts information from a Beeline long report (version 0.2.1).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -105,7 +106,8 @@ optional arguments:
 
 Input Files:
   -i FILE [FILE ...], --input FILE [FILE ...]
-                        The name of the input file(s).
+                        The name of the input file(s). Use '-' only once to
+                        read on the standard input (STDIN).
   -m FILE, --map FILE   The name of the file containing mapping information.
 
 Mapping Options:
@@ -131,7 +133,7 @@ Extraction Options:
                         '24', '25', '26']
 
 Output Options:
-  -s STR, --suffix STR  The suffix to add to the output file(s) [extract]
+  -s STR, --suffix STR  The suffix to add to the output file(s) [_extract]
 ```
 
 

@@ -15,7 +15,7 @@ from tempfile import NamedTemporaryFile
 __author__ = "Louis-Philippe Lemieux Perreault"
 __copyright__ = "Copyright 2015, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "MIT"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 # The location tuple
@@ -577,7 +577,8 @@ def parse_args(parser):
         dest="i_filenames",
         required=True,
         nargs="+",
-        help="The name of the input file(s).",
+        help="The name of the input file(s). Use '-' only once to read on the "
+             "standard input (STDIN).",
     )
     group.add_argument(
         "-m",
