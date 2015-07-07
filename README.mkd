@@ -97,6 +97,7 @@ usage: beelinetools.py extract [-h] [-v] -i FILE [FILE ...] -m FILE
                                [--id-col COL] [--chr-col COL] [--pos-col COL]
                                [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
                                [-c CHROM [CHROM ...]] [-s STR]
+                               [--output-delim SEP]
 
 Extracts information from a Beeline long report (version 0.2.1).
 
@@ -134,6 +135,7 @@ Extraction Options:
 
 Output Options:
   -s STR, --suffix STR  The suffix to add to the output file(s) [_extract]
+  --output-delim SEP    The output file field delimiter [,]
 ```
 
 
