@@ -507,6 +507,171 @@ class TestBeeline2Plink(unittest.TestCase):
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
+        other_options.o_delim = ","
+        beelinetools.extract_beeline(
+            i_filenames=[tmp_filename, tmp_filename_2],
+            out_dir=self.tmp_dir,
+            o_suffix="_test_extract",
+            locations=mapping_info,
+            other_opts=other_options,
+        )
+
+        # Checking the two CSV files
+        zipped = zip(
+            (tmp_filename, tmp_filename_2),
+            (tmp_content, tmp_content_2),
+        )
+        for i_filename, content in zipped:
+            # Checking the file exists
+            i_filename = os.path.splitext(i_filename)[0] + "_test_extract.csv"
+            self.assertTrue(os.path.isfile(i_filename))
+
+            # The expected content
+            expected_content = content.getvalue().splitlines()
+
+            # The observed content
+            observed_content = None
+            with open(i_filename, "r") as i_file:
+                observed_content = i_file.read().splitlines()
+
+            # Comparing
+            for e_line, o_line in zip(expected_content, observed_content):
+                self.assertEqual(e_line, o_line)
+
+    def test_extract_beeline_2(self):
+        """Tests the 'extract_beeline' function (with different delimiter)."""
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # Generating mapping information
+        mapping_info = {}
+        for i in range(nb_markers):
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+            )
+
+        # What chromosome to extract
+        chrom_to_extract = random.sample(
+            {marker.chrom for marker in mapping_info.values()},
+            2,
+        )
+
+        # Creating a temporary file
+        tmp_filename = None
+        tmp_content = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep="\t", file=tmp_content)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if marker_loc.chrom in chrom_to_extract:
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep="\t", file=tmp_content)
+
+        # Creating a temporary file
+        tmp_filename_2 = None
+        tmp_content_2 = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep="\t",
+                  file=tmp_content_2)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + nb_samples + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if marker_loc.chrom in chrom_to_extract:
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep="\t", file=tmp_content_2)
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.chrom = chrom_to_extract
+        other_options.o_delim = "\t"
         beelinetools.extract_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,

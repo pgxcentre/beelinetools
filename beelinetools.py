@@ -5,6 +5,7 @@
 from __future__ import print_function
 
 import os
+import re
 import sys
 import logging
 import argparse
@@ -264,6 +265,9 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
     # The chromosome to extract
     chrom = other_opts.chrom
 
+    # The regex for changing delimiter (if required)
+    regex = re.compile(",")
+
     # Reading all the files
     for i_filename in i_filenames:
         logging.info("Extracting from '{}'".format(i_filename))
@@ -328,7 +332,13 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
 
             with open(o_filename, "w") as o_file:
                 # Writing the header
-                o_file.write(new_header_line)
+                if other_opts.o_delim == ",":
+                    o_file.write(new_header_line)
+                else:
+                    o_file.write(regex.sub(
+                        other_opts.o_delim,
+                        new_header_line,
+                    ))
 
                 while line != "":
                     # Reading the next line
@@ -344,7 +354,13 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
                         if "Position" in name_to_add:
                             to_add += "{},".format(marker_location.pos)
                         # We need this marker, we write the line
-                        o_file.write(to_add + line)
+                        if other_opts.o_delim == ",":
+                            o_file.write(to_add + line)
+                        else:
+                            o_file.write(regex.sub(
+                                other_opts.o_delim,
+                                to_add + line,
+                            ))
 
                         # Updating the number of extracted markers
                         nb_extracted_markers += 1
@@ -692,6 +708,14 @@ def parse_args(parser):
         dest="o_suffix",
         default="_extract",
         help="The suffix to add to the output file(s) [%(default)s]",
+    )
+    group.add_argument(
+        "--output-delim",
+        type=str,
+        metavar="SEP",
+        dest="o_delim",
+        default=",",
+        help="The output file field delimiter [%(default)s]",
     )
 
     # Parsing and returning the arguments and options
