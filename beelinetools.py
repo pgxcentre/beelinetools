@@ -62,12 +62,16 @@ def main():
             )
 
         elif args.analysis_type == "extract":
+            # Reading the list of samples to keep
+            samples_to_keep = read_list(args.samples_to_keep)
+
             # Extracting from the beeline report(s)
             extract_beeline(
                 i_filenames=args.i_filenames,
                 out_dir=args.output_dir,
                 o_suffix=args.o_suffix,
                 locations=map_data,
+                samples=samples_to_keep,
                 other_opts=args,
             )
 
@@ -251,7 +255,8 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                       marker_location.pos, sep="\t", file=o_file)
 
 
-def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
+def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
+                    other_opts):
     """Extracts information from beeline report(s).
 
     Args:
@@ -259,6 +264,7 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
         out_dir (str): the name of the output directory
         o_suffix (str): the suffix to add to the output file(s)
         locations (dict): a dictionary from marker ID to genomic location
+        samples (set): a set of samples to keep
         other_opts(argparse.Namespace): the program options
 
     """
@@ -308,7 +314,9 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
                 name: i for i, name in
                 enumerate(header_line.rstrip("\r\n").split(","))
             }
-            required_columns = ("SNP Name", )
+            required_columns = ["SNP Name"]
+            if other_opts.samples_to_keep is not None:
+                required_columns.append("Sample ID")
             for name in required_columns:
                 if name not in header:
                     raise ProgramError(
@@ -343,6 +351,13 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, other_opts):
                 while line != "":
                     # Reading the next line
                     row = line.rstrip("\r\n").split(",")
+
+                    # Keep a subset of samples?
+                    if other_opts.samples_to_keep is not None:
+                        sample = row[header["Sample ID"]]
+                        if sample not in samples:
+                            line = i_file.readline()
+                            continue
 
                     # Getting the marker information
                     marker = row[header["SNP Name"]]
@@ -415,6 +430,28 @@ def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
 
     logging.info("  - {:,d} markers".format(len(map_info)))
     return map_info
+
+
+def read_list(i_filename):
+    """Reads a file containing a list of element.
+
+    Args:
+        i_filename (str): the name of the file to read (might be ``None``)
+
+    Returns:
+        set: a set containing the list of element in the file
+
+    If ``i_filename`` is ``None``, an empty set is returned.
+
+    """
+    elements = set()
+    if i_filename is not None:
+        logging.info("Reading list of samples to keep")
+        with open(i_filename, "r") as i_file:
+            elements = set(i_file.read().splitlines())
+        logging.info("  - {:,d} samples to keep".format(len(elements)))
+
+    return elements
 
 
 def get_header(f, delim=",", data_delim="[Data]"):
@@ -549,6 +586,12 @@ def check_args(args):
             if chrom == 0:
                 raise ProgramError("{}: invalid chromosome".format(o_chrom))
         args.chrom = set(e_chrom)
+
+        # List of samples to keep
+        if args.samples_to_keep is not None:
+            if not os.path.isfile(args.samples_to_keep):
+                raise ProgramError("{}: no such "
+                                   "file".format(args.samples_to_keep))
 
 
 def parse_args(parser):
@@ -692,10 +735,19 @@ def parse_args(parser):
     group.add_argument(
         "-c",
         "--chr",
+        type=str,
         nargs="+",
         dest="chrom",
         default=[str(encode_chromosome(str(chrom))) for chrom in range(1, 27)],
         help="The chromosome to extract %(default)s",
+    )
+    group.add_argument(
+        "-k",
+        "--keep",
+        type=str,
+        metavar="FILE",
+        dest="samples_to_keep",
+        help="A list of samples to extract",
     )
 
     # The output options
