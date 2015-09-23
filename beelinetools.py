@@ -18,7 +18,7 @@ from six.moves import range, zip
 __author__ = "Louis-Philippe Lemieux Perreault"
 __copyright__ = "Copyright 2015, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "MIT"
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 # The location tuple
