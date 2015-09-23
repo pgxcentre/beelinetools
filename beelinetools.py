@@ -12,6 +12,8 @@ import argparse
 from collections import namedtuple
 from tempfile import NamedTemporaryFile
 
+from six.moves import range, zip
+
 
 __author__ = "Louis-Philippe Lemieux Perreault"
 __copyright__ = "Copyright 2015, Beaulieu-Saucier Pharmacogenomics Centre"
