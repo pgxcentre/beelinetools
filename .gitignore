@@ -1,3 +1,7 @@
 *.swp
 *~
 *.pyc
+
+.coverage
+.coveragerc
+htmlcov

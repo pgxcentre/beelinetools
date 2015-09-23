@@ -3,7 +3,7 @@
 
 # beelinetools - A toolkit to work with Illumina's beeline reports
 
-*Version 0.2.1*
+*Version 0.2.2*
 
 The `beelinetools` script perform different tasks on Illumina's Beeline final
 report (long format). Such tasks include conversion to the Plink format and
@@ -12,6 +12,12 @@ data extraction.
 The script works on both **Python 2.7 and higher**, and **Python 3.3 and
 higher**. It has been developed and tested under Linux operating system, but
 should work on MacOS X and Windows operating systems.
+
+
+## Requirements
+
+The only requirement is the `six` python module, for proper compatibility
+between python 2 and 3.
 
 
 ## Usage
@@ -23,7 +29,7 @@ information.
 $ beelinetools.py --help
 usage: beelinetools.py [-h] [-v] {convert,extract} ...
 
-Performs different tasks on Illumina's beeline report(s) (version 0.2.1).
+Performs different tasks on Illumina's beeline report(s) (version 0.2.2).
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -55,7 +61,7 @@ usage: beelinetools.py convert [-h] [-v] -i FILE [FILE ...] -m FILE
                                [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
 
 Conversion from the Beeline long report format to other, more commonly used,
-format (such as Plink) (version 0.2.1).
+format (such as Plink) (version 0.2.2).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -96,9 +102,10 @@ $ beelinetools.py extract --help
 usage: beelinetools.py extract [-h] [-v] -i FILE [FILE ...] -m FILE
                                [--id-col COL] [--chr-col COL] [--pos-col COL]
                                [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
-                               [-c CHROM [CHROM ...]] [-s STR]
+                               [-c CHROM [CHROM ...]] [-k FILE] [-s STR]
+                               [--output-delim SEP]
 
-Extracts information from a Beeline long report (version 0.2.1).
+Extracts information from a Beeline long report (version 0.2.2).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -131,9 +138,11 @@ Extraction Options:
                         '6', '7', '8', '9', '10', '11', '12', '13', '14',
                         '15', '16', '17', '18', '19', '20', '21', '22', '23',
                         '24', '25', '26']
+  -k FILE, --keep FILE  A list of samples to extract
 
 Output Options:
   -s STR, --suffix STR  The suffix to add to the output file(s) [_extract]
+  --output-delim SEP    The output file field delimiter [,]
 ```
 
 
@@ -143,9 +152,9 @@ To test the script, perform the following command:
 
 ```console
 $ python test_beelinetools.py 
-...........................
+...............................
 ----------------------------------------------------------------------
-Ran 27 tests in 0.030s
+Ran 31 tests in 0.024s
 
 OK
 ```
