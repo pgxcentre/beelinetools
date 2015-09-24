@@ -12,7 +12,10 @@ import argparse
 from collections import namedtuple
 from tempfile import NamedTemporaryFile
 
-from six.moves import range, zip
+try:
+    from six.moves import range, zip
+except ImportError:
+    pass
 
 
 __author__ = "Louis-Philippe Lemieux Perreault"
