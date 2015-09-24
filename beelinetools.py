@@ -103,6 +103,9 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
         other_opts(argparse.Namespace): the program options
 
     """
+    # The samples that were already seen
+    seen_samples = set()
+
     for i_filename in i_filenames:
         logging.info("Converting '{}'".format(i_filename))
 
@@ -120,7 +123,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
 
         # Reading the file (or STDIN)
         try:
-            # The number of markers and samples
+            # The number of markers
             nb_markers = None
 
             # Reading the assay information
@@ -172,6 +175,10 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                 while line != "":
                     # Getting the marker name and sample id
                     sample = row[header["Sample ID"]]
+                    if sample in seen_samples:
+                        logging.warning("{}: duplicate sample "
+                                        "found".format(sample))
+                    seen_samples.add(sample)
 
                     # Logging
                     logging.info("Processing {}".format(sample))
@@ -184,6 +191,12 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                     while current_sample == sample:
                         # Checking the marker order
                         marker = row[header["SNP Name"]]
+
+                        # If the index is > than the length, it might be a
+                        # duplicated sample...
+                        if current_marker_i == len(all_markers):
+                            break
+
                         if all_markers[current_marker_i] is None:
                             all_markers[current_marker_i] = marker
                         if all_markers[current_marker_i] != marker:
