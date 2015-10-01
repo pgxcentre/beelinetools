@@ -23,6 +23,9 @@ except ImportError:
 import beelinetools
 
 
+_possible_nuc = ("A", "C", "G", "T")
+
+
 class _DummyArgs(object):
     pass
 
@@ -146,15 +149,18 @@ class TestBeeline2Plink(unittest.TestCase):
             tmp_filename = f.name
             print(*range(6), sep="\n", file=f)
             print("[Assay]", file=f)
-            print("Name,Chr,MapInfo", file=f)
+            print("Name,Chr,MapInfo,SNP", file=f)
             for i in range(100):
                 marker_name = "marker_{}".format(i + 1)
                 chrom = random.randint(1, 26)
                 pos = random.randint(1, 3000000)
-                print(marker_name, chrom, pos, sep=",", file=f)
+                alleles = random.sample(_possible_nuc, 2)
+                snp = "[{}]".format("/".join(alleles))
+                print(marker_name, chrom, pos, snp, sep=",", file=f)
                 expected[marker_name] = beelinetools._Location(
                     chrom=chrom,
                     pos=pos,
+                    alleles={alleles[0]: "A", alleles[1]: "B"},
                 )
 
         # Getting the expected data
@@ -164,15 +170,20 @@ class TestBeeline2Plink(unittest.TestCase):
             id_col="Name",
             chr_col="Chr",
             pos_col="MapInfo",
+            allele_col="SNP",
         )
         self.assertEqual(expected, observed)
 
         # Adding a '[Controls]' line, everything below should be excluded
         with open(tmp_filename, "a") as o_file:
-            print("added_marker,1,1", file=o_file)
+            print("added_marker,1,1,[A/G]", file=o_file)
             print("[Controls],,,", file=o_file)
             print("skipped_line", file=o_file)
-        expected["added_marker"] = beelinetools._Location(chrom=1, pos=1)
+        expected["added_marker"] = beelinetools._Location(
+            chrom=1,
+            pos=1,
+            alleles={"A": "A", "G": "B"},
+        )
 
         # Getting the expected data
         observed = beelinetools.read_mapping_info(
@@ -181,6 +192,7 @@ class TestBeeline2Plink(unittest.TestCase):
             id_col="Name",
             chr_col="Chr",
             pos_col="MapInfo",
+            allele_col="SNP",
         )
         self.assertEqual(expected, observed)
 
@@ -287,9 +299,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -480,9 +494,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -648,9 +664,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -696,9 +714,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # What chromosome to extract
@@ -861,9 +881,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # What chromosome to extract
@@ -1027,9 +1049,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # What chromosome to extract
@@ -1293,9 +1317,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -1434,9 +1460,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -1512,9 +1540,11 @@ class TestBeeline2Plink(unittest.TestCase):
         for i in range(nb_markers):
             if i + 1 == 3:
                 continue
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function (should raise a warning)
@@ -1667,9 +1697,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -1741,9 +1773,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -1822,9 +1856,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -1897,9 +1933,11 @@ class TestBeeline2Plink(unittest.TestCase):
         # Generating mapping information
         mapping_info = {}
         for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
             mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
                 chrom=random.randint(1, 26),
                 pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
             )
 
         # Executing the function
@@ -1959,6 +1997,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
+        args.allele_col = "SNP"
 
         # Executing the function
         beelinetools.check_args(args)
@@ -2001,6 +2040,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -2239,6 +2279,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chromosome"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -2289,6 +2330,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chromosome"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -2304,6 +2346,110 @@ class TestBeeline2Plink(unittest.TestCase):
         )
 
     def test_check_args_convert_error_4(self):
+        """Tests the 'check_args' function (missing column in map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "snp"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+
+        # Executing the function
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": missing column 'snp'",
+            e.exception.message,
+        )
+
+    def test_check_args_extract_error_4(self):
+        """Tests the 'check_args' function (missing column in map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "snp"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "extract"
+        args.samples_to_keep = None
+        args.chrom = ["Y"]
+
+        # Executing the function
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": missing column 'snp'",
+            e.exception.message,
+        )
+
+    def test_check_args_convert_error_5(self):
         """Tests the 'check_args' function (missing output directory)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -2344,6 +2490,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = missing_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -2357,7 +2504,7 @@ class TestBeeline2Plink(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_extract_error_4(self):
+    def test_check_args_extract_error_5(self):
         """Tests the 'check_args' function (missing output directory)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -2398,6 +2545,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = missing_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -2415,7 +2563,7 @@ class TestBeeline2Plink(unittest.TestCase):
 
     @unittest.skipIf(platform.system() == "Windows",
                      "Not a problem on windows systems")
-    def test_check_args_convert_error_5(self):
+    def test_check_args_convert_error_6(self):
         """Tests the 'check_args' function (output directory not writable)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -2457,6 +2605,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -2480,7 +2629,7 @@ class TestBeeline2Plink(unittest.TestCase):
 
     @unittest.skipIf(platform.system() == "Windows",
                      "Not a problem on windows systems")
-    def test_check_args_extract_error_5(self):
+    def test_check_args_extract_error_6(self):
         """Tests the 'check_args' function (output directory not writable)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -2522,6 +2671,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -2545,7 +2695,7 @@ class TestBeeline2Plink(unittest.TestCase):
             # Changing the permission back
             os.chmod(output_directory, 0o750)
 
-    def test_check_args_extract_error_6(self):
+    def test_check_args_extract_error_7(self):
         """Tests the 'check_args' function (invalid chromosome)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -2587,6 +2737,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -2601,7 +2752,7 @@ class TestBeeline2Plink(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_extract_error_7(self):
+    def test_check_args_extract_error_8(self):
         """Tests the 'check_args' function (missing sample file)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -2643,6 +2794,7 @@ class TestBeeline2Plink(unittest.TestCase):
         args.id_col = "Name"
         args.chr_col = "Chr"
         args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
