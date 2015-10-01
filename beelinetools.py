@@ -25,8 +25,12 @@ __version__ = "0.2.2"
 
 
 # The location tuple
-_Location = namedtuple("Location", ["chrom", "pos"])
-_unknown_location = _Location(chrom=0, pos=0)
+_Location = namedtuple("Location", ["chrom", "pos", "alleles"])
+_unknown_location = _Location(chrom=0, pos=0, alleles={})
+
+
+# The complement
+_complement = {"A": "T", "T": "A", "C": "G", "G": "C", "-": "-"}
 
 
 def main():
@@ -55,6 +59,7 @@ def main():
             id_col=args.id_col,
             chr_col=args.chr_col,
             pos_col=args.pos_col,
+            allele_col=args.allele_col,
         )
 
         if args.analysis_type == "convert":
@@ -77,6 +82,15 @@ def main():
                 o_suffix=args.o_suffix,
                 locations=map_data,
                 samples=samples_to_keep,
+                other_opts=args,
+            )
+
+        elif args.analysis_type == "sample-split":
+            # Split the report per sample
+            split_report(
+                i_filenames=args.i_filenames,
+                out_dir=args.output_dir,
+                locations=map_data,
                 other_opts=args,
             )
 
@@ -273,6 +287,191 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                       marker_location.pos, sep="\t", file=o_file)
 
 
+def split_report(i_filenames, out_dir, locations, other_opts):
+    """Split beeline report(s) into a file for each sample.
+
+    Args:
+        i_filenames (list): a list of file names (str)
+        out_dir (str): the name of the output directory
+        locations (dict): a dictionary from marker ID to genomic location
+        other_opts(argparse.Namespace): the program options
+
+    """
+    # The samples that were already seen
+    seen_samples = set()
+
+    for i_filename in i_filenames:
+        logging.info("Splitting '{}'".format(i_filename))
+
+        # Opening the file
+        i_file = None
+        if i_filename != "-":
+            i_file = open(i_filename, "r")
+        else:
+            i_file = sys.stdin
+
+        # Reading the file (or STDIN)
+        try:
+            # The number of markers
+            nb_markers = None
+
+            # Reading the assay information
+            line = i_file.readline()
+            while line.rstrip("\r\n") != "[Header]":
+                line = i_file.readline()
+
+            # The metadata
+            metadata = line
+
+            while not line.startswith("[Data]"):
+                if line.startswith(other_opts.nb_snps_kw):
+                    nb_markers = int(line.rstrip("\r\n").split(",")[-1])
+                line = i_file.readline()
+                metadata += line
+
+            if nb_markers is None:
+                raise ProgramError(
+                    "{}: invalid header (missing '{}' value)".format(
+                        i_filename,
+                        other_opts.nb_snps_kw,
+                    )
+                )
+
+            logging.info("There are {:,d} markers".format(nb_markers))
+
+            # Reading and checking the header
+            header_row = i_file.readline().rstrip("\r\n").split(",")
+            header = {name: i for i, name in enumerate(header_row)}
+            required_columns = ("SNP Name", "Sample ID", "Allele1 - Forward",
+                                "Allele2 - Forward")
+            for name in required_columns:
+                if name not in header:
+                    raise ProgramError(
+                        "{}: '{}': missing column".format(i_filename, name),
+                    )
+
+            # Creating the list that will contain the marker list
+            current_marker_i = 0
+            all_markers = [None for i in range(nb_markers)]
+            nb_samples = 0
+
+            # Reading the first data line
+            line = i_file.readline()
+            row = line.rstrip("\r\n").split(",")
+
+            while line != "":
+                # Getting the marker name and sample id
+                sample = row[header["Sample ID"]]
+                if sample in seen_samples:
+                    logging.warning("{}: duplicate sample found, output file "
+                                    "will be overwritten".format(sample))
+                seen_samples.add(sample)
+
+                logging.info("Processing {}".format(sample))
+                o_filename = os.path.join(out_dir, sample + ".txt")
+                with open(o_filename, "w") as o_file:
+                    # Writing the metadata?
+                    if other_opts.keep_meta:
+                        o_file.write(metadata)
+
+                    # Printing the header row
+                    header_to_print = header_row
+                    if other_opts.add_mapping:
+                        print("Chr", "Pos", sep=other_opts.o_delim,
+                              end=other_opts.o_delim, file=o_file)
+
+                    if other_opts.add_ab:
+                        print("Allele1 - AB", "Allele2 - AB",
+                              sep=other_opts.o_delim, end=other_opts.o_delim,
+                              file=o_file)
+
+                    print(*header_row, sep=other_opts.o_delim, file=o_file)
+
+                    # Reading the rest of the data for this sample
+                    current_sample = sample
+                    while current_sample == sample:
+                        # Checking the marker order
+                        marker = row[header["SNP Name"]]
+
+                        # If the index is > than the length, it might be a
+                        # duplicated sample...
+                        if current_marker_i == len(all_markers):
+                            break
+
+                        if all_markers[current_marker_i] is None:
+                            all_markers[current_marker_i] = marker
+                        if all_markers[current_marker_i] != marker:
+                            raise ProgramError(
+                                "{}: marker order is not the same for "
+                                "sample '{}'".format(i_filename, sample)
+                            )
+
+                        # The marker location information
+                        chrom, pos, allele_encoding = locations[marker]
+
+                        # Printing
+                        if other_opts.add_mapping:
+                            print(chrom, pos, sep=other_opts.o_delim,
+                                  end=other_opts.o_delim, file=o_file)
+
+                        if other_opts.add_ab:
+                            # Adding A/B alleles
+                            allele_1 = encode_allele(
+                                allele=row[header["Allele1 - Forward"]],
+                                encoding=allele_encoding,
+                            )
+                            allele_2 = encode_allele(
+                                allele=row[header["Allele2 - Forward"]],
+                                encoding=allele_encoding,
+                            )
+                            print(allele_1, allele_2, sep=other_opts.o_delim,
+                                  end=other_opts.o_delim, file=o_file)
+
+                        # Printing
+                        print(*row, sep=other_opts.o_delim, file=o_file)
+
+                        # Increasing the current marker
+                        current_marker_i += 1
+
+                        # Reading the next row
+                        line = i_file.readline()
+                        if line == "":
+                            # End of file
+                            break
+
+                        # Splitting and current sample
+                        row = line.rstrip("\r\n").split(",")
+                        current_sample = row[header["Sample ID"]]
+
+                    # If there is only one marker, there is a problem
+                    if nb_markers != 1 and current_marker_i == 1:
+                        raise ProgramError(
+                            "{}: data should be sorted by samples, not by "
+                            "markers ('{}' had 1 marker, expecting "
+                            "{:,d}".format(i_filename, sample, nb_markers)
+                        )
+
+                    # Are there any missing marker?
+                    if current_marker_i != nb_markers:
+                        nb_missing = abs(current_marker_i - nb_markers)
+                        raise ProgramError(
+                            "{}: missing {} marker{} for sample '{}'".format(
+                                i_filename,
+                                nb_missing,
+                                "s" if nb_missing > 1 else "",
+                                sample,
+                            )
+                        )
+                    current_marker_i = 0
+                    nb_samples += 1
+
+            # Closing the output files
+            logging.info("Done writing {:,d} samples".format(nb_samples))
+
+        finally:
+            i_file.close()
+
+
 def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
                     other_opts):
     """Extracts information from beeline report(s).
@@ -411,7 +610,7 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
         ))
 
 
-def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
+def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col, allele_col):
     """Reads the mapping information to gather genomic locations.
 
     Args:
@@ -420,6 +619,7 @@ def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
         id_col (str): the name of the column containing marker ID
         chr_col (str): the name of the column containing the chromosome
         pos_col (str): the name of the column containing the position
+        allele_col (str): the name of the column containing the alleles
 
     Returns:
         dict: a dictionary from marker ID to genomic location
@@ -443,8 +643,17 @@ def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col):
             chrom = encode_chromosome(row[header[chr_col]])
             pos = int(row[header[pos_col]])
 
+            # Splitting the alleles
+            alleles = row[header[allele_col]].split("/")
+            a_allele = alleles[0][1:]
+            b_allele = alleles[1][:-1]
+
             # Saving the information
-            map_info[name] = _Location(chrom=chrom, pos=pos)
+            map_info[name] = _Location(
+                chrom=chrom,
+                pos=pos,
+                alleles={a_allele: "A", b_allele: "B"},
+            )
 
     logging.info("  - {:,d} markers".format(len(map_info)))
     return map_info
@@ -536,6 +745,30 @@ def encode_chromosome(chrom):
     return chrom
 
 
+def encode_allele(allele, encoding):
+    """Encodes an allele according to encoding.
+
+    Args:
+        allele (str): the allele to encode
+        encoding (dict): the allele encoding
+
+    Returns:
+        str: the encoded allele.
+
+    Note
+    ----
+        The function search for the allele and its complement. If none of this
+        is found in the encoding, then "-" is returned.
+
+    """
+    encoded_allele = encoding.get(allele, "-")
+
+    if encoded_allele == "-":
+        encoded_allele = encoding.get(_complement[allele], "-")
+
+    return encoded_allele
+
+
 def check_args(args):
     """Checks the arguments and options.
 
@@ -573,7 +806,7 @@ def check_args(args):
         header = get_header(i_file, args.delim, "[Assay]")
 
         # Checking the column
-        for name in (args.id_col, args.chr_col, args.pos_col):
+        for name in (args.id_col, args.chr_col, args.pos_col, args.allele_col):
             if name not in header:
                 raise ProgramError("{}: missing column '{}'".format(
                     args.map_filename,
@@ -692,6 +925,13 @@ def parse_args(parser):
         help="The name of the column containing the position [%(default)s]",
     )
     group.add_argument(
+        "--allele-col",
+        type=str,
+        metavar="COL",
+        default="SNP",
+        help="The name of the column containing the alleles [%(default)s]",
+    )
+    group.add_argument(
         "--delim",
         type=str,
         metavar="SEP",
@@ -737,6 +977,45 @@ def parse_args(parser):
                     "more commonly used, format (such as Plink) "
                     "(version {}).".format(__version__),
         parents=[p_parser],
+    )
+
+    # The sample split parser
+    sample_split_parser = subparsers.add_parser(
+        "sample-split",
+        help="Split the report so that there is one file for each sample.",
+        description="The long report will be split so that each sample has "
+                    "its own separate file (version {})".format(__version__),
+        parents=[p_parser],
+    )
+
+    # The split options
+    group = sample_split_parser.add_argument_group("Split Options")
+    group.add_argument(
+        "--keep-metadata",
+        action="store_true",
+        dest="keep_meta",
+        help="Keeps the meta data ([Header]) in each of the output reports.",
+    )
+    group.add_argument(
+        "--add-ab",
+        action="store_true",
+        dest="add_ab",
+        help="Adds the A/B alleles in the output file (sometimes required by "
+             "other softwares).",
+    )
+    group.add_argument(
+        "--add-mapping",
+        action="store_true",
+        dest="add_mapping",
+        help="Adds mapping information (chromosome/Position).",
+    )
+    group.add_argument(
+        "--output-delim",
+        type=str,
+        metavar="SEP",
+        dest="o_delim",
+        default=",",
+        help="The output file field delimiter [%(default)s]",
     )
 
     # The extract parser
