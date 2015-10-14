@@ -424,7 +424,8 @@ def split_report(i_filenames, out_dir, locations, other_opts):
                                 allele=row[header["Allele2 - Forward"]],
                                 encoding=allele_encoding,
                             )
-                            print(allele_1, allele_2, sep=other_opts.o_delim,
+                            print(*sorted([allele_1, allele_2]),
+                                  sep=other_opts.o_delim,
                                   end=other_opts.o_delim, file=o_file)
 
                         # Printing
