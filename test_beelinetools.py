@@ -30,7 +30,7 @@ class _DummyArgs(object):
     pass
 
 
-class TestBeeline2Plink(unittest.TestCase):
+class TestBeelineTools(unittest.TestCase):
     def setUp(self):
         """Setup the tests."""
         self.tmp_dir = mkdtemp(prefix="beelinetools_test_")
