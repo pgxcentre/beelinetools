@@ -309,6 +309,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         beelinetools.convert_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
@@ -504,6 +505,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
             beelinetools.convert_beeline(
                 i_filenames=[tmp_filename, tmp_filename_2],
@@ -674,6 +676,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
             with self._my_compatibility_assertLogs(level="WARNING") as cm:
                 beelinetools.convert_beeline(
@@ -1327,6 +1330,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num SNPs"
+        other_options.o_format = "ped"
         beelinetools.convert_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
@@ -1470,6 +1474,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
             beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
@@ -1550,6 +1555,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function (should raise a warning)
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
             beelinetools.convert_beeline(
                 i_filenames=[tmp_filename],
@@ -1707,6 +1713,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
             beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
@@ -1783,6 +1790,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
             beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
@@ -1866,6 +1874,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
             beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
@@ -1943,6 +1952,7 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         other_options = _DummyArgs()
         other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
             beelinetools.convert_beeline(
                 i_filenames=[tmp_filename] * 2,
@@ -1998,6 +2008,7 @@ class TestBeelineTools(unittest.TestCase):
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
         args.allele_col = "SNP"
+        args.o_format = "ped"
 
         # Executing the function
         beelinetools.check_args(args)
@@ -2105,6 +2116,7 @@ class TestBeelineTools(unittest.TestCase):
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
+        args.o_format = "ped"
 
         # Executing the function
         self.assertFalse(os.path.isfile(beeline_reports[2]))
@@ -2194,6 +2206,7 @@ class TestBeelineTools(unittest.TestCase):
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
+        args.o_format = "ped"
 
         # Executing the function
         self.assertFalse(os.path.isfile(map_filename))
@@ -2283,6 +2296,7 @@ class TestBeelineTools(unittest.TestCase):
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
+        args.o_format = "ped"
 
         # Executing the function
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2387,6 +2401,7 @@ class TestBeelineTools(unittest.TestCase):
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
+        args.o_format = "ped"
 
         # Executing the function
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2494,6 +2509,7 @@ class TestBeelineTools(unittest.TestCase):
         args.output_dir = missing_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
+        args.o_format = "ped"
 
         # Executing the function
         self.assertFalse(os.path.isdir(missing_directory))
@@ -2609,6 +2625,7 @@ class TestBeelineTools(unittest.TestCase):
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
+        args.o_format = "ped"
 
         # Executing the function
         try:
@@ -2808,6 +2825,32 @@ class TestBeelineTools(unittest.TestCase):
             "dummy_file_that_does_not_exist: no such file",
             e.exception.message,
         )
+
+    def test_encode_genotype(self):
+        """Tests the 'encode_genotypes' function."""
+        # The data
+        genotypes = ["A A", "A G", "G A", "G G", "- -"]
+        expected_genotypes = [0, 1, 1, 2, -1]
+        encoding = {"A": "A", "G": "B"}
+
+        # Testing
+        for expected_geno, geno in zip(expected_genotypes, genotypes):
+            self.assertEqual(
+                expected_geno,
+                beelinetools.encode_genotype(*geno.split(" "),
+                                             encoding=encoding),
+            )
+
+    def test_encode_allele(self):
+        """Tests the 'encode_allele' function."""
+        alleles = ["A", "G", "-"]
+        encoding = {"G": "A", "A": "B"}
+        expected_alleles = ["B", "A", "-"]
+        for expected_allele, allele in zip(expected_alleles, alleles):
+            self.assertEqual(
+                expected_allele,
+                beelinetools.encode_allele(allele, encoding),
+            )
 
 
 class BaseTestCaseContext_Compatibility:
