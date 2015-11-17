@@ -196,6 +196,65 @@ class TestBeelineTools(unittest.TestCase):
         )
         self.assertEqual(expected, observed)
 
+    def test_read_list(self):
+        """Tests the 'read_list' function."""
+        # Giving None should return an empty set
+        self.assertEqual(set(), beelinetools.read_list(None))
+
+        # Writing a file containing 10 elements (9 unique ones)
+        list_filename = os.path.join(self.tmp_dir, "elements.txt")
+        elements = ["Sample_{}".format(i) for i in range(9)] + ["Sample_3"]
+        with open(list_filename, "w") as o_file:
+            print(*elements, sep="\n", file=o_file)
+
+        # Comparing
+        self.assertEqual(set(elements), beelinetools.read_list(list_filename))
+
+    def test_encode_genotype(self):
+        """Tests the 'encode_genotypes' function."""
+        # The data
+        genotypes = ["A A", "A G", "G A", "G G", "- -"]
+        expected_genotypes = [0, 1, 1, 2, -1]
+        encoding = {"A": "A", "G": "B"}
+
+        # Testing
+        for expected_geno, geno in zip(expected_genotypes, genotypes):
+            self.assertEqual(
+                expected_geno,
+                beelinetools.encode_genotype(*geno.split(" "),
+                                             encoding=encoding),
+            )
+
+    def test_encode_allele(self):
+        """Tests the 'encode_allele' function."""
+        alleles = ["A", "G", "-"]
+        encoding = {"G": "A", "A": "B"}
+        expected_alleles = ["B", "A", "-"]
+        for expected_allele, allele in zip(expected_alleles, alleles):
+            self.assertEqual(
+                expected_allele,
+                beelinetools.encode_allele(allele, encoding),
+            )
+
+
+class TestBeelineToolsConvertPED(unittest.TestCase):
+    def setUp(self):
+        """Setup the tests."""
+        self.tmp_dir = mkdtemp(prefix="beelinetools_test_")
+
+    def tearDown(self):
+        """Finishes the tests."""
+        # Cleaning the temporary directory
+        shutil.rmtree(self.tmp_dir)
+
+    def _my_compatibility_assertLogs(self, logger=None, level=None):
+        """Compatibility 'assertLogs' function for Python < 3.4."""
+        if hasattr(self, "assertLogs"):
+            return self.assertLogs(logger, level)
+
+        else:
+            return AssertLogsContext_Compatibility(self, logger, level)
+
     def test_convert_beeline(self):
         """Tests the 'convert_beeline' function."""
         # The number of samples and of markers for this test
@@ -693,529 +752,6 @@ class TestBeelineTools(unittest.TestCase):
             ["WARNING:root:sample_1: duplicate sample found"],
             cm.output,
         )
-
-    def test_read_list(self):
-        """Tests the 'read_list' function."""
-        # Giving None should return an empty set
-        self.assertEqual(set(), beelinetools.read_list(None))
-
-        # Writing a file containing 10 elements (9 unique ones)
-        list_filename = os.path.join(self.tmp_dir, "elements.txt")
-        elements = ["Sample_{}".format(i) for i in range(9)] + ["Sample_3"]
-        with open(list_filename, "w") as o_file:
-            print(*elements, sep="\n", file=o_file)
-
-        # Comparing
-        self.assertEqual(set(elements), beelinetools.read_list(list_filename))
-
-    def test_extract_beeline(self):
-        """Tests the 'extract_beeline' function."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
-
-        # What chromosome to extract
-        chrom_to_extract = random.sample(
-            {marker.chrom for marker in mapping_info.values()},
-            2,
-        )
-
-        # Creating a temporary file
-        tmp_filename = None
-        tmp_content = StringIO()
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
-                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
-            print(*header, sep=",", file=f)
-            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-
-                    # Printing the file
-                    to_print = [sample_id, marker_id, random.uniform(0, 3),
-                                random.uniform(0, 3), a1, a2, random.random(),
-                                random.uniform(-10, 10)]
-                    print(*to_print, sep=",", file=f)
-
-                    # Getting the mapping information
-                    marker_loc = mapping_info[marker_id]
-                    if marker_loc.chrom in chrom_to_extract:
-                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
-                              sep=",", file=tmp_content)
-
-        # Creating a temporary file
-        tmp_filename_2 = None
-        tmp_content_2 = StringIO()
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename_2 = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
-                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
-            print(*header, sep=",", file=f)
-            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content_2)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + nb_samples + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-
-                    # Printing the file
-                    to_print = [sample_id, marker_id, random.uniform(0, 3),
-                                random.uniform(0, 3), a1, a2, random.random(),
-                                random.uniform(-10, 10)]
-                    print(*to_print, sep=",", file=f)
-
-                    # Getting the mapping information
-                    marker_loc = mapping_info[marker_id]
-                    if marker_loc.chrom in chrom_to_extract:
-                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
-                              sep=",", file=tmp_content_2)
-
-        # Executing the function
-        other_options = _DummyArgs()
-        other_options.nb_snps_kw = "Num Used SNPs"
-        other_options.chrom = chrom_to_extract
-        other_options.o_delim = ","
-        other_options.samples_to_keep = None
-        beelinetools.extract_beeline(
-            i_filenames=[tmp_filename, tmp_filename_2],
-            out_dir=self.tmp_dir,
-            o_suffix="_test_extract",
-            locations=mapping_info,
-            samples=set(),
-            other_opts=other_options,
-        )
-
-        # Checking the two CSV files
-        zipped = zip(
-            (tmp_filename, tmp_filename_2),
-            (tmp_content, tmp_content_2),
-        )
-        for i_filename, content in zipped:
-            # Checking the file exists
-            i_filename = os.path.splitext(i_filename)[0] + "_test_extract.csv"
-            self.assertTrue(os.path.isfile(i_filename))
-
-            # The expected content
-            expected_content = content.getvalue().splitlines()
-
-            # The observed content
-            observed_content = None
-            with open(i_filename, "r") as i_file:
-                observed_content = i_file.read().splitlines()
-
-            # Comparing
-            for e_line, o_line in zip(expected_content, observed_content):
-                self.assertEqual(e_line, o_line)
-
-    def test_extract_beeline_2(self):
-        """Tests the 'extract_beeline' function (with different delimiter)."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
-
-        # What chromosome to extract
-        chrom_to_extract = random.sample(
-            {marker.chrom for marker in mapping_info.values()},
-            2,
-        )
-
-        # Creating a temporary file
-        tmp_filename = None
-        tmp_content = StringIO()
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
-                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
-            print(*header, sep=",", file=f)
-            print(*(["Chr", "Position"] + header), sep="\t", file=tmp_content)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-
-                    # Printing the file
-                    to_print = [sample_id, marker_id, random.uniform(0, 3),
-                                random.uniform(0, 3), a1, a2, random.random(),
-                                random.uniform(-10, 10)]
-                    print(*to_print, sep=",", file=f)
-
-                    # Getting the mapping information
-                    marker_loc = mapping_info[marker_id]
-                    if marker_loc.chrom in chrom_to_extract:
-                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
-                              sep="\t", file=tmp_content)
-
-        # Creating a temporary file
-        tmp_filename_2 = None
-        tmp_content_2 = StringIO()
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename_2 = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
-                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
-            print(*header, sep=",", file=f)
-            print(*(["Chr", "Position"] + header), sep="\t",
-                  file=tmp_content_2)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + nb_samples + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-
-                    # Printing the file
-                    to_print = [sample_id, marker_id, random.uniform(0, 3),
-                                random.uniform(0, 3), a1, a2, random.random(),
-                                random.uniform(-10, 10)]
-                    print(*to_print, sep=",", file=f)
-
-                    # Getting the mapping information
-                    marker_loc = mapping_info[marker_id]
-                    if marker_loc.chrom in chrom_to_extract:
-                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
-                              sep="\t", file=tmp_content_2)
-
-        # Executing the function
-        other_options = _DummyArgs()
-        other_options.nb_snps_kw = "Num Used SNPs"
-        other_options.chrom = chrom_to_extract
-        other_options.o_delim = "\t"
-        other_options.samples_to_keep = None
-        beelinetools.extract_beeline(
-            i_filenames=[tmp_filename, tmp_filename_2],
-            out_dir=self.tmp_dir,
-            o_suffix="_test_extract",
-            locations=mapping_info,
-            samples=set(),
-            other_opts=other_options,
-        )
-
-        # Checking the two CSV files
-        zipped = zip(
-            (tmp_filename, tmp_filename_2),
-            (tmp_content, tmp_content_2),
-        )
-        for i_filename, content in zipped:
-            # Checking the file exists
-            i_filename = os.path.splitext(i_filename)[0] + "_test_extract.csv"
-            self.assertTrue(os.path.isfile(i_filename))
-
-            # The expected content
-            expected_content = content.getvalue().splitlines()
-
-            # The observed content
-            observed_content = None
-            with open(i_filename, "r") as i_file:
-                observed_content = i_file.read().splitlines()
-
-            # Comparing
-            for e_line, o_line in zip(expected_content, observed_content):
-                self.assertEqual(e_line, o_line)
-
-    def test_extract_beeline_3(self):
-        """Tests the 'extract_beeline' function with sample."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
-
-        # What chromosome to extract
-        chrom_to_extract = random.sample(
-            {marker.chrom for marker in mapping_info.values()},
-            2,
-        )
-
-        # Creating a temporary file
-        tmp_filename = None
-        tmp_content = StringIO()
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
-                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
-            print(*header, sep=",", file=f)
-            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-
-                    # Printing the file
-                    to_print = [sample_id, marker_id, random.uniform(0, 3),
-                                random.uniform(0, 3), a1, a2, random.random(),
-                                random.uniform(-10, 10)]
-                    print(*to_print, sep=",", file=f)
-
-                    # Getting the mapping information
-                    marker_loc = mapping_info[marker_id]
-                    if ((marker_loc.chrom in chrom_to_extract) and
-                            (sample_id == "sample_2")):
-                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
-                              sep=",", file=tmp_content)
-
-        # Creating a temporary file
-        tmp_filename_2 = None
-        tmp_content_2 = StringIO()
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename_2 = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
-                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
-            print(*header, sep=",", file=f)
-            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content_2)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + nb_samples + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-
-                    # Printing the file
-                    to_print = [sample_id, marker_id, random.uniform(0, 3),
-                                random.uniform(0, 3), a1, a2, random.random(),
-                                random.uniform(-10, 10)]
-                    print(*to_print, sep=",", file=f)
-
-                    # Getting the mapping information
-                    marker_loc = mapping_info[marker_id]
-                    if ((marker_loc.chrom in chrom_to_extract) and
-                            (sample_id == "sample_2")):
-                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
-                              sep=",", file=tmp_content_2)
-
-        # Creating a file containing the samples to keep
-        sample_filename = os.path.join(self.tmp_dir, "samples_to_keep.txt")
-        with open(sample_filename, "w") as o_file:
-            print("sample_2", file=o_file)
-
-        # Executing the function
-        other_options = _DummyArgs()
-        other_options.nb_snps_kw = "Num Used SNPs"
-        other_options.chrom = chrom_to_extract
-        other_options.o_delim = ","
-        other_options.samples_to_keep = sample_filename
-        beelinetools.extract_beeline(
-            i_filenames=[tmp_filename, tmp_filename_2],
-            out_dir=self.tmp_dir,
-            o_suffix="_test_extract",
-            locations=mapping_info,
-            samples=set("sample_2"),
-            other_opts=other_options,
-        )
-
-        # Checking the two CSV files
-        zipped = zip(
-            (tmp_filename, tmp_filename_2),
-            (tmp_content, tmp_content_2),
-        )
-        for i_filename, content in zipped:
-            # Checking the file exists
-            i_filename = os.path.splitext(i_filename)[0] + "_test_extract.csv"
-            self.assertTrue(os.path.isfile(i_filename))
-
-            # The expected content
-            expected_content = content.getvalue().splitlines()
-
-            # The observed content
-            observed_content = None
-            with open(i_filename, "r") as i_file:
-                observed_content = i_file.read().splitlines()
-
-            # Comparing
-            for e_line, o_line in zip(expected_content, observed_content):
-                self.assertEqual(e_line, o_line)
 
     def test_convert_beeline_2(self):
         """Tests the 'convert_beeline' function (different nb SNPs kw)."""
@@ -2013,67 +1549,6 @@ class TestBeelineTools(unittest.TestCase):
         # Executing the function
         beelinetools.check_args(args)
 
-    def test_check_args_extract(self):
-        """Tests the 'check_args' function for extraction."""
-        # Creating dummy Beeline reports
-        beeline_reports = [
-            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
-            for i in range(10)
-        ]
-        for filename in beeline_reports:
-            with open(filename, "w") as o_file:
-                pass
-
-        # Creating a dummy map file
-        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
-        with open(map_filename, "w") as o_file:
-            print(
-                "Illumina, Inc.\n"
-                "[Heading]\n"
-                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
-                "Assay Format,Infinium LCG\n"
-                "Date Manufactured,4/22/2014\n"
-                "Loci Count ,2583651\n"
-                "[Assay]\n"
-                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
-                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
-                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
-                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
-                "Dummy_data",
-                file=o_file,
-            )
-
-        # Creating dummy options
-        args = _DummyArgs()
-        args.i_filenames = beeline_reports
-        args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
-        args.output_dir = self.tmp_dir
-        args.nb_snps_kw = "Num Used SNPs"
-        args.analysis_type = "extract"
-        args.samples_to_keep = None
-        args.chrom = ["1", "2", "X"]
-
-        # Executing the function
-        beelinetools.check_args(args)
-
-        # Creating a sample file to extract
-        sample_filename = os.path.join(self.tmp_dir, "samples.txt")
-        with open(sample_filename, "w") as o_file:
-            for i in range(1, 10):
-                print("sample_{}".format(i), file=o_file)
-
-        # Resetting the chromosomes and sample file
-        args.chrom = ["1", "2", "X"]
-        args.samples_to_keep = sample_filename
-
-        # Executing the function
-        beelinetools.check_args(args)
-
     def test_check_args_convert_error_1(self):
         """Tests the 'check_args' function (missing beeline report(s))."""
         # Creating dummy Beeline reports (missing the third one)
@@ -2127,60 +1602,6 @@ class TestBeelineTools(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_extract_error_1(self):
-        """Tests the 'check_args' function (missing beeline report(s))."""
-        # Creating dummy Beeline reports (missing the third one)
-        beeline_reports = [
-            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
-            for i in range(10)
-        ]
-        for filename in beeline_reports:
-            if not filename.endswith("file_3.csv"):
-                with open(filename, "w") as o_file:
-                    pass
-
-        # Creating a dummy map file
-        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
-        with open(map_filename, "w") as o_file:
-            print(
-                "Illumina, Inc.\n"
-                "[Heading]\n"
-                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
-                "Assay Format,Infinium LCG\n"
-                "Date Manufactured,4/22/2014\n"
-                "Loci Count ,2583651\n"
-                "[Assay]\n"
-                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
-                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
-                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
-                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
-                "Dummy_data",
-                file=o_file,
-            )
-
-        # Creating dummy options
-        args = _DummyArgs()
-        args.i_filenames = beeline_reports
-        args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.output_dir = self.tmp_dir
-        args.nb_snps_kw = "Num Used SNPs"
-        args.analysis_type = "extract"
-        args.samples_to_keep = None
-        args.chrom = ["12", "3"]
-
-        # Executing the function
-        self.assertFalse(os.path.isfile(beeline_reports[2]))
-        with self.assertRaises(beelinetools.ProgramError) as e:
-            beelinetools.check_args(args)
-        self.assertEqual(
-            beeline_reports[2] + ": no such file",
-            e.exception.message,
-        )
-
     def test_check_args_convert_error_2(self):
         """Tests the 'check_args' function (missing map file)."""
         # Creating dummy Beeline reports
@@ -2207,43 +1628,6 @@ class TestBeelineTools(unittest.TestCase):
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
         args.o_format = "ped"
-
-        # Executing the function
-        self.assertFalse(os.path.isfile(map_filename))
-        with self.assertRaises(beelinetools.ProgramError) as e:
-            beelinetools.check_args(args)
-        self.assertEqual(
-            map_filename + ": no such file",
-            e.exception.message,
-        )
-
-    def test_check_args_extract_error_2(self):
-        """Tests the 'check_args' function (missing map file)."""
-        # Creating dummy Beeline reports
-        beeline_reports = [
-            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
-            for i in range(10)
-        ]
-        for filename in beeline_reports:
-            with open(filename, "w") as o_file:
-                pass
-
-        # Not creating a dummy map file
-        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
-
-        # Creating dummy options
-        args = _DummyArgs()
-        args.i_filenames = beeline_reports
-        args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.output_dir = self.tmp_dir
-        args.nb_snps_kw = "Num Used SNPs"
-        args.analysis_type = "extract"
-        args.samples_to_keep = None
-        args.chrom = ["22", "X"]
 
         # Executing the function
         self.assertFalse(os.path.isfile(map_filename))
@@ -2306,59 +1690,6 @@ class TestBeelineTools(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_extract_error_3(self):
-        """Tests the 'check_args' function (missing column in map file)."""
-        # Creating dummy Beeline reports
-        beeline_reports = [
-            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
-            for i in range(10)
-        ]
-        for filename in beeline_reports:
-            with open(filename, "w") as o_file:
-                pass
-
-        # Creating a dummy map file
-        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
-        with open(map_filename, "w") as o_file:
-            print(
-                "Illumina, Inc.\n"
-                "[Heading]\n"
-                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
-                "Assay Format,Infinium LCG\n"
-                "Date Manufactured,4/22/2014\n"
-                "Loci Count ,2583651\n"
-                "[Assay]\n"
-                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
-                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
-                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
-                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
-                "Dummy_data",
-                file=o_file,
-            )
-
-        # Creating dummy options
-        args = _DummyArgs()
-        args.i_filenames = beeline_reports
-        args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chromosome"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
-        args.output_dir = self.tmp_dir
-        args.nb_snps_kw = "Num Used SNPs"
-        args.analysis_type = "extract"
-        args.samples_to_keep = None
-        args.chrom = ["Y"]
-
-        # Executing the function
-        with self.assertRaises(beelinetools.ProgramError) as e:
-            beelinetools.check_args(args)
-        self.assertEqual(
-            map_filename + ": missing column 'Chromosome'",
-            e.exception.message,
-        )
-
     def test_check_args_convert_error_4(self):
         """Tests the 'check_args' function (missing column in map file)."""
         # Creating dummy Beeline reports
@@ -2402,59 +1733,6 @@ class TestBeelineTools(unittest.TestCase):
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
         args.o_format = "ped"
-
-        # Executing the function
-        with self.assertRaises(beelinetools.ProgramError) as e:
-            beelinetools.check_args(args)
-        self.assertEqual(
-            map_filename + ": missing column 'snp'",
-            e.exception.message,
-        )
-
-    def test_check_args_extract_error_4(self):
-        """Tests the 'check_args' function (missing column in map file)."""
-        # Creating dummy Beeline reports
-        beeline_reports = [
-            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
-            for i in range(10)
-        ]
-        for filename in beeline_reports:
-            with open(filename, "w") as o_file:
-                pass
-
-        # Creating a dummy map file
-        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
-        with open(map_filename, "w") as o_file:
-            print(
-                "Illumina, Inc.\n"
-                "[Heading]\n"
-                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
-                "Assay Format,Infinium LCG\n"
-                "Date Manufactured,4/22/2014\n"
-                "Loci Count ,2583651\n"
-                "[Assay]\n"
-                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
-                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
-                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
-                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
-                "Dummy_data",
-                file=o_file,
-            )
-
-        # Creating dummy options
-        args = _DummyArgs()
-        args.i_filenames = beeline_reports
-        args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "snp"
-        args.output_dir = self.tmp_dir
-        args.nb_snps_kw = "Num Used SNPs"
-        args.analysis_type = "extract"
-        args.samples_to_keep = None
-        args.chrom = ["Y"]
 
         # Executing the function
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2510,63 +1788,6 @@ class TestBeelineTools(unittest.TestCase):
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
         args.o_format = "ped"
-
-        # Executing the function
-        self.assertFalse(os.path.isdir(missing_directory))
-        with self.assertRaises(beelinetools.ProgramError) as e:
-            beelinetools.check_args(args)
-        self.assertEqual(
-            missing_directory + ": no such directory",
-            e.exception.message,
-        )
-
-    def test_check_args_extract_error_5(self):
-        """Tests the 'check_args' function (missing output directory)."""
-        # Creating dummy Beeline reports
-        beeline_reports = [
-            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
-            for i in range(10)
-        ]
-        for filename in beeline_reports:
-            with open(filename, "w") as o_file:
-                pass
-
-        # Creating a dummy map file
-        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
-        with open(map_filename, "w") as o_file:
-            print(
-                "Illumina, Inc.\n"
-                "[Heading]\n"
-                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
-                "Assay Format,Infinium LCG\n"
-                "Date Manufactured,4/22/2014\n"
-                "Loci Count ,2583651\n"
-                "[Assay]\n"
-                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
-                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
-                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
-                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
-                "Dummy_data",
-                file=o_file,
-            )
-
-        # The missing directory
-        missing_directory = os.path.join(self.tmp_dir, "missing_dir")
-
-        # Creating dummy options
-        args = _DummyArgs()
-        args.i_filenames = beeline_reports
-        args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
-        args.output_dir = missing_directory
-        args.nb_snps_kw = "Num Used SNPs"
-        args.analysis_type = "extract"
-        args.samples_to_keep = None
-        args.chrom = ["3"]
 
         # Executing the function
         self.assertFalse(os.path.isdir(missing_directory))
@@ -2643,6 +1864,849 @@ class TestBeelineTools(unittest.TestCase):
         finally:
             # Changing the permission back
             os.chmod(output_directory, 0o750)
+
+
+class TestBeelineToolsExtract(unittest.TestCase):
+    def setUp(self):
+        """Setup the tests."""
+        self.tmp_dir = mkdtemp(prefix="beelinetools_test_")
+
+    def tearDown(self):
+        """Finishes the tests."""
+        # Cleaning the temporary directory
+        shutil.rmtree(self.tmp_dir)
+
+    def _my_compatibility_assertLogs(self, logger=None, level=None):
+        """Compatibility 'assertLogs' function for Python < 3.4."""
+        if hasattr(self, "assertLogs"):
+            return self.assertLogs(logger, level)
+
+        else:
+            return AssertLogsContext_Compatibility(self, logger, level)
+
+    def test_extract_beeline(self):
+        """Tests the 'extract_beeline' function."""
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # Generating mapping information
+        mapping_info = {}
+        for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
+            )
+
+        # What chromosome to extract
+        chrom_to_extract = random.sample(
+            {marker.chrom for marker in mapping_info.values()},
+            2,
+        )
+
+        # Creating a temporary file
+        tmp_filename = None
+        tmp_content = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if marker_loc.chrom in chrom_to_extract:
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep=",", file=tmp_content)
+
+        # Creating a temporary file
+        tmp_filename_2 = None
+        tmp_content_2 = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content_2)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + nb_samples + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if marker_loc.chrom in chrom_to_extract:
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep=",", file=tmp_content_2)
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.chrom = chrom_to_extract
+        other_options.o_delim = ","
+        other_options.samples_to_keep = None
+        beelinetools.extract_beeline(
+            i_filenames=[tmp_filename, tmp_filename_2],
+            out_dir=self.tmp_dir,
+            o_suffix="_test_extract",
+            locations=mapping_info,
+            samples=set(),
+            other_opts=other_options,
+        )
+
+        # Checking the two CSV files
+        zipped = zip(
+            (tmp_filename, tmp_filename_2),
+            (tmp_content, tmp_content_2),
+        )
+        for i_filename, content in zipped:
+            # Checking the file exists
+            i_filename = os.path.splitext(i_filename)[0] + "_test_extract.csv"
+            self.assertTrue(os.path.isfile(i_filename))
+
+            # The expected content
+            expected_content = content.getvalue().splitlines()
+
+            # The observed content
+            observed_content = None
+            with open(i_filename, "r") as i_file:
+                observed_content = i_file.read().splitlines()
+
+            # Comparing
+            for e_line, o_line in zip(expected_content, observed_content):
+                self.assertEqual(e_line, o_line)
+
+    def test_extract_beeline_2(self):
+        """Tests the 'extract_beeline' function (with different delimiter)."""
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # Generating mapping information
+        mapping_info = {}
+        for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
+            )
+
+        # What chromosome to extract
+        chrom_to_extract = random.sample(
+            {marker.chrom for marker in mapping_info.values()},
+            2,
+        )
+
+        # Creating a temporary file
+        tmp_filename = None
+        tmp_content = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep="\t", file=tmp_content)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if marker_loc.chrom in chrom_to_extract:
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep="\t", file=tmp_content)
+
+        # Creating a temporary file
+        tmp_filename_2 = None
+        tmp_content_2 = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep="\t",
+                  file=tmp_content_2)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + nb_samples + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if marker_loc.chrom in chrom_to_extract:
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep="\t", file=tmp_content_2)
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.chrom = chrom_to_extract
+        other_options.o_delim = "\t"
+        other_options.samples_to_keep = None
+        beelinetools.extract_beeline(
+            i_filenames=[tmp_filename, tmp_filename_2],
+            out_dir=self.tmp_dir,
+            o_suffix="_test_extract",
+            locations=mapping_info,
+            samples=set(),
+            other_opts=other_options,
+        )
+
+        # Checking the two CSV files
+        zipped = zip(
+            (tmp_filename, tmp_filename_2),
+            (tmp_content, tmp_content_2),
+        )
+        for i_filename, content in zipped:
+            # Checking the file exists
+            i_filename = os.path.splitext(i_filename)[0] + "_test_extract.csv"
+            self.assertTrue(os.path.isfile(i_filename))
+
+            # The expected content
+            expected_content = content.getvalue().splitlines()
+
+            # The observed content
+            observed_content = None
+            with open(i_filename, "r") as i_file:
+                observed_content = i_file.read().splitlines()
+
+            # Comparing
+            for e_line, o_line in zip(expected_content, observed_content):
+                self.assertEqual(e_line, o_line)
+
+    def test_extract_beeline_3(self):
+        """Tests the 'extract_beeline' function with sample."""
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # Generating mapping information
+        mapping_info = {}
+        for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
+            )
+
+        # What chromosome to extract
+        chrom_to_extract = random.sample(
+            {marker.chrom for marker in mapping_info.values()},
+            2,
+        )
+
+        # Creating a temporary file
+        tmp_filename = None
+        tmp_content = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if ((marker_loc.chrom in chrom_to_extract) and
+                            (sample_id == "sample_2")):
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep=",", file=tmp_content)
+
+        # Creating a temporary file
+        tmp_filename_2 = None
+        tmp_content_2 = StringIO()
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            header = ["Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                      "Allele2 - Forward", "B Allele Freq", "Log R Ratio"]
+            print(*header, sep=",", file=f)
+            print(*(["Chr", "Position"] + header), sep=",", file=tmp_content_2)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + nb_samples + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    to_print = [sample_id, marker_id, random.uniform(0, 3),
+                                random.uniform(0, 3), a1, a2, random.random(),
+                                random.uniform(-10, 10)]
+                    print(*to_print, sep=",", file=f)
+
+                    # Getting the mapping information
+                    marker_loc = mapping_info[marker_id]
+                    if ((marker_loc.chrom in chrom_to_extract) and
+                            (sample_id == "sample_2")):
+                        print(*([marker_loc.chrom, marker_loc.pos] + to_print),
+                              sep=",", file=tmp_content_2)
+
+        # Creating a file containing the samples to keep
+        sample_filename = os.path.join(self.tmp_dir, "samples_to_keep.txt")
+        with open(sample_filename, "w") as o_file:
+            print("sample_2", file=o_file)
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.chrom = chrom_to_extract
+        other_options.o_delim = ","
+        other_options.samples_to_keep = sample_filename
+        beelinetools.extract_beeline(
+            i_filenames=[tmp_filename, tmp_filename_2],
+            out_dir=self.tmp_dir,
+            o_suffix="_test_extract",
+            locations=mapping_info,
+            samples=set("sample_2"),
+            other_opts=other_options,
+        )
+
+        # Checking the two CSV files
+        zipped = zip(
+            (tmp_filename, tmp_filename_2),
+            (tmp_content, tmp_content_2),
+        )
+        for i_filename, content in zipped:
+            # Checking the file exists
+            i_filename = os.path.splitext(i_filename)[0] + "_test_extract.csv"
+            self.assertTrue(os.path.isfile(i_filename))
+
+            # The expected content
+            expected_content = content.getvalue().splitlines()
+
+            # The observed content
+            observed_content = None
+            with open(i_filename, "r") as i_file:
+                observed_content = i_file.read().splitlines()
+
+            # Comparing
+            for e_line, o_line in zip(expected_content, observed_content):
+                self.assertEqual(e_line, o_line)
+
+    def test_check_args_extract(self):
+        """Tests the 'check_args' function for extraction."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "extract"
+        args.samples_to_keep = None
+        args.chrom = ["1", "2", "X"]
+
+        # Executing the function
+        beelinetools.check_args(args)
+
+        # Creating a sample file to extract
+        sample_filename = os.path.join(self.tmp_dir, "samples.txt")
+        with open(sample_filename, "w") as o_file:
+            for i in range(1, 10):
+                print("sample_{}".format(i), file=o_file)
+
+        # Resetting the chromosomes and sample file
+        args.chrom = ["1", "2", "X"]
+        args.samples_to_keep = sample_filename
+
+        # Executing the function
+        beelinetools.check_args(args)
+
+    def test_check_args_extract_error_1(self):
+        """Tests the 'check_args' function (missing beeline report(s))."""
+        # Creating dummy Beeline reports (missing the third one)
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            if not filename.endswith("file_3.csv"):
+                with open(filename, "w") as o_file:
+                    pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "extract"
+        args.samples_to_keep = None
+        args.chrom = ["12", "3"]
+
+        # Executing the function
+        self.assertFalse(os.path.isfile(beeline_reports[2]))
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            beeline_reports[2] + ": no such file",
+            e.exception.message,
+        )
+
+    def test_check_args_extract_error_2(self):
+        """Tests the 'check_args' function (missing map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Not creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "extract"
+        args.samples_to_keep = None
+        args.chrom = ["22", "X"]
+
+        # Executing the function
+        self.assertFalse(os.path.isfile(map_filename))
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": no such file",
+            e.exception.message,
+        )
+
+    def test_check_args_extract_error_3(self):
+        """Tests the 'check_args' function (missing column in map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chromosome"
+        args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "extract"
+        args.samples_to_keep = None
+        args.chrom = ["Y"]
+
+        # Executing the function
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": missing column 'Chromosome'",
+            e.exception.message,
+        )
+
+    def test_check_args_extract_error_4(self):
+        """Tests the 'check_args' function (missing column in map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "snp"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "extract"
+        args.samples_to_keep = None
+        args.chrom = ["Y"]
+
+        # Executing the function
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": missing column 'snp'",
+            e.exception.message,
+        )
+
+    def test_check_args_extract_error_5(self):
+        """Tests the 'check_args' function (missing output directory)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # The missing directory
+        missing_directory = os.path.join(self.tmp_dir, "missing_dir")
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
+        args.output_dir = missing_directory
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "extract"
+        args.samples_to_keep = None
+        args.chrom = ["3"]
+
+        # Executing the function
+        self.assertFalse(os.path.isdir(missing_directory))
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            missing_directory + ": no such directory",
+            e.exception.message,
+        )
 
     @unittest.skipIf(platform.system() == "Windows",
                      "Not a problem on windows systems")
@@ -2825,32 +2889,6 @@ class TestBeelineTools(unittest.TestCase):
             "dummy_file_that_does_not_exist: no such file",
             e.exception.message,
         )
-
-    def test_encode_genotype(self):
-        """Tests the 'encode_genotypes' function."""
-        # The data
-        genotypes = ["A A", "A G", "G A", "G G", "- -"]
-        expected_genotypes = [0, 1, 1, 2, -1]
-        encoding = {"A": "A", "G": "B"}
-
-        # Testing
-        for expected_geno, geno in zip(expected_genotypes, genotypes):
-            self.assertEqual(
-                expected_geno,
-                beelinetools.encode_genotype(*geno.split(" "),
-                                             encoding=encoding),
-            )
-
-    def test_encode_allele(self):
-        """Tests the 'encode_allele' function."""
-        alleles = ["A", "G", "-"]
-        encoding = {"G": "A", "A": "B"}
-        expected_alleles = ["B", "A", "-"]
-        for expected_allele, allele in zip(expected_alleles, alleles):
-            self.assertEqual(
-                expected_allele,
-                beelinetools.encode_allele(allele, encoding),
-            )
 
 
 class BaseTestCaseContext_Compatibility:
