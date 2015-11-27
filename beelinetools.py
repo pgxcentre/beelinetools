@@ -264,7 +264,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                         genotypes[current_marker_i] = encode_genotype(
                             allele_1,
                             allele_2,
-                            locations[all_markers[current_marker_i]].alleles,
+                            locations[marker].alleles,
                         )
 
                     # Increasing the current marker
@@ -575,10 +575,8 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
         nb_extracted_markers = 0
 
         # Getting the output filename
-        o_filename = os.path.join(
-            out_dir,
-            os.path.basename(os.path.splitext(i_filename)[0]),
-        ) + o_suffix + ".csv"
+        o_filename = os.path.basename(os.path.splitext(i_filename)[0])
+        o_filename += o_suffix + ".csv"
 
         # Opening the file
         i_file = None
@@ -588,6 +586,9 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
         else:
             i_file = sys.stdin
             o_filename = "from_stdin" + o_suffix + ".csv"
+
+        # Joining the paths
+        o_filename = os.path.join(out_dir, o_filename)
 
         # Reading the file
         try:
