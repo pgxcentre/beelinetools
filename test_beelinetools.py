@@ -13,12 +13,15 @@ import unittest
 import collections
 from io import StringIO
 from collections import defaultdict
+from subprocess import check_call, PIPE
 from tempfile import mkdtemp, NamedTemporaryFile
 
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+
+from pyplink.tests.test_pyplink import get_plink
 
 import beelinetools
 
@@ -255,7 +258,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         else:
             return AssertLogsContext_Compatibility(self, logger, level)
 
-    def test_convert_beeline(self):
+    def test_convert_beeline_ped(self):
         """Tests the 'convert_beeline' function."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -449,7 +452,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             }
             self.assertEqual(expected, seen_samples)
 
-    def test_convert_beeline_dup_samples(self):
+    def test_convert_beeline_ped_dup_samples(self):
         """Tests the 'convert_beeline' function with duplicated samples."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -655,7 +658,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                 expected.discard("sample_2")
             self.assertEqual(expected, seen_samples)
 
-    def test_convert_beeline_dup_samples_error(self):
+    def test_convert_beeline_ped_dup_samples_error(self):
         """Tests the 'convert_beeline' function with duplicated samples."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -753,7 +756,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             cm.output,
         )
 
-    def test_convert_beeline_2(self):
+    def test_convert_beeline_ped_2(self):
         """Tests the 'convert_beeline' function (different nb SNPs kw)."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -947,7 +950,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             }
             self.assertEqual(expected, seen_samples)
 
-    def test_convert_beeline_error_1(self):
+    def test_convert_beeline_ped_error_1(self):
         """Tests the 'convert_beeline' function with missing nb markers."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -1023,7 +1026,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_convert_beeline_error_2(self):
+    def test_convert_beeline_ped_error_2(self):
         """Tests the 'convert_beeline' function with missing marker map."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -1185,7 +1188,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         }
         self.assertEqual(expected, seen_samples)
 
-    def test_convert_beeline_error_3(self):
+    def test_convert_beeline_ped_error_3(self):
         """Tests the 'convert_beeline' function (wrong nb of markers)."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -1262,7 +1265,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_convert_beeline_error_4(self):
+    def test_convert_beeline_ped_error_4(self):
         """Tests the 'convert_beeline' function (missing column)."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -1339,7 +1342,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_convert_beeline_error_5(self):
+    def test_convert_beeline_ped_error_5(self):
         """Tests the 'convert_beeline' function (invalid order)."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -1424,7 +1427,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_convert_beeline_error_6(self):
+    def test_convert_beeline_ped_error_6(self):
         """Tests the 'convert_beeline' function (invalid sorting)."""
         # The number of samples and of markers for this test
         nb_samples = 3
@@ -1502,7 +1505,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_convert(self):
+    def test_check_args_convert_ped(self):
         """Tests the 'check_args' function for conversion."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -1549,7 +1552,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         # Executing the function
         beelinetools.check_args(args)
 
-    def test_check_args_convert_error_1(self):
+    def test_check_args_convert_ped_error_1(self):
         """Tests the 'check_args' function (missing beeline report(s))."""
         # Creating dummy Beeline reports (missing the third one)
         beeline_reports = [
@@ -1602,7 +1605,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_convert_error_2(self):
+    def test_check_args_convert_ped_error_2(self):
         """Tests the 'check_args' function (missing map file)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -1638,7 +1641,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_convert_error_3(self):
+    def test_check_args_convert_ped_error_3(self):
         """Tests the 'check_args' function (missing column in map file)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -1690,7 +1693,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_convert_error_4(self):
+    def test_check_args_convert_ped_error_4(self):
         """Tests the 'check_args' function (missing column in map file)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -1742,7 +1745,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             e.exception.message,
         )
 
-    def test_check_args_convert_error_5(self):
+    def test_check_args_convert_ped_error_5(self):
         """Tests the 'check_args' function (missing output directory)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -1800,7 +1803,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     @unittest.skipIf(platform.system() == "Windows",
                      "Not a problem on windows systems")
-    def test_check_args_convert_error_6(self):
+    def test_check_args_convert_ped_error_6(self):
         """Tests the 'check_args' function (output directory not writable)."""
         # Creating dummy Beeline reports
         beeline_reports = [
@@ -1864,6 +1867,273 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         finally:
             # Changing the permission back
             os.chmod(output_directory, 0o750)
+
+
+class TestBeelineToolsConvertBED(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Creates a directory just for Plink binary, and retrieve Plink
+        cls.plink_tmp_dir = mkdtemp(prefix="beelinetools_plink_")
+        cls.plink_path, cls.plink_message = get_plink(cls.plink_tmp_dir)
+
+    def setUp(self):
+        """Setup the tests."""
+        self.tmp_dir = mkdtemp(prefix="beelinetools_test_")
+
+    @classmethod
+    def tearDownClass(cls):
+        # Removes the Plink binary directory
+        shutil.rmtree(cls.plink_tmp_dir)
+
+    def tearDown(self):
+        """Finishes the tests."""
+        # Cleaning the temporary directory
+        shutil.rmtree(self.tmp_dir)
+
+    @staticmethod
+    def _create_tped(plink, in_prefix, out_prefix):
+        """Creates a TPED (out_prefix) for a BED (in_prefix) file."""
+        check_call([
+            plink,
+            "--noweb",
+            "--bfile", in_prefix,
+            "--recode", "--transpose", "--tab",
+            "--out", out_prefix,
+        ], stdout=PIPE, stderr=PIPE)
+
+    def _my_compatibility_assertLogs(self, logger=None, level=None):
+        """Compatibility 'assertLogs' function for Python < 3.4."""
+        if hasattr(self, "assertLogs"):
+            return self.assertLogs(logger, level)
+
+        else:
+            return AssertLogsContext_Compatibility(self, logger, level)
+
+    def test_convert_beeline_bed(self):
+        """Tests the 'convert_beeline' function."""
+        # Checking we have access to plink
+        if self.plink_path is None:
+            self.skipTest(self.plink_message)
+
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # The mapping info
+        mapping_info = {}
+
+        # Creating a temporary file
+        tmp_filename = None
+        sample_genotype = defaultdict(dict)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print("Sample ID", "SNP Name", "X", "Y",
+                  "Allele1 - Forward", "Allele2 - Forward",
+                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+                    marker_alleles = alleles[marker_id]
+
+                    # Saving the mapping info
+                    mapping_info[marker_id] = beelinetools._Location(
+                        chrom=random.randint(1, 26),
+                        pos=random.randint(1, 1000000),
+                        alleles={
+                            a: b for a, b in zip(marker_alleles, ("A", "B"))
+                        },
+                    )
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    sample_genotype[sample_id][marker_id] = genotype
+
+                    # Printing the file
+                    print(sample_id, marker_id, random.uniform(0, 3),
+                          random.uniform(0, 3), a1, a2, random.random(),
+                          random.uniform(-10, 10), sep=",", file=f,)
+
+        # Creating a temporary file
+        tmp_filename_2 = None
+        sample_genotype_2 = defaultdict(dict)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print("Sample ID", "SNP Name", "X", "Y",
+                  "Allele1 - Forward", "Allele2 - Forward",
+                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + nb_samples + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+                    marker_alleles = tuple(
+                        mapping_info[marker_id].alleles.keys()
+                    )
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    sample_genotype_2[sample_id][marker_id] = genotype
+
+                    # Printing the file
+                    print(sample_id, marker_id, random.uniform(0, 3),
+                          random.uniform(0, 3), a1, a2, random.random(),
+                          random.uniform(-10, 10), sep=",", file=f,)
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "bed"
+        beelinetools.convert_beeline(
+            i_filenames=[tmp_filename, tmp_filename_2],
+            out_dir=self.tmp_dir,
+            locations=mapping_info,
+            other_opts=other_options,
+        )
+
+        # Checking the two BIM files
+        for bim_filename in (tmp_filename, tmp_filename_2):
+            bim_filename = os.path.splitext(bim_filename)[0] + ".bim"
+            self.assertTrue(os.path.isfile(bim_filename))
+
+            # Checking the file content
+            seen_markers = set()
+            with open(bim_filename, "r") as i_file:
+                for i, line in enumerate(i_file):
+                    # Gathering the information
+                    marker = "marker_{}".format(i + 1)
+                    row = line.rstrip("\n").split("\t")
+
+                    # Getting the A/B alleles
+                    alleles = {
+                        ab_allele: allele for allele, ab_allele in
+                        mapping_info[marker].alleles.items()
+                    }
+
+                    # Comparing the content of the file
+                    self.assertTrue(marker in mapping_info)
+                    self.assertEqual(6, len(row))
+                    self.assertEqual(mapping_info[marker].chrom, int(row[0]))
+                    self.assertEqual(marker, row[1])
+                    self.assertEqual("0", row[2])
+                    self.assertEqual(mapping_info[marker].pos, int(row[3]))
+                    self.assertEqual(alleles["B"], row[4])
+                    self.assertEqual(alleles["A"], row[5])
+
+                    # We have compared this marker
+                    seen_markers.add(marker)
+            self.assertEqual(set(mapping_info.keys()), seen_markers)
+
+        # Checking the two FAM files
+        zipped = zip(
+            (1, nb_samples + 1),
+            (tmp_filename, tmp_filename_2),
+        )
+        for sample_id_add, fam_filename in zipped:
+            fam_filename = os.path.splitext(fam_filename)[0] + ".fam"
+            self.assertTrue(os.path.isfile(fam_filename))
+
+            # Checking the ped file content
+            seen_samples = set()
+            with open(fam_filename, "r") as i_file:
+                for i, line in enumerate(i_file):
+                    # Gathering the information
+                    sample_id = "sample_{}".format(i + sample_id_add)
+                    row = line.rstrip("\n").split(" ")
+
+                    # Checking the sample information
+                    self.assertEqual(6, len(row))
+                    sample_info = row[:6]
+                    self.assertEqual(
+                        [sample_id, sample_id, "0", "0", "0", "-9"],
+                        sample_info,
+                    )
+
+        # Checking the two BED files
+        zipped = zip(
+            (1, nb_samples + 1),
+            (tmp_filename, tmp_filename_2),
+            (sample_genotype, sample_genotype_2),
+        )
+        for sample_id_add, bed_filename, sample_geno in zipped:
+            bed_prefix = os.path.splitext(bed_filename)[0]
+            self.assertTrue(os.path.isfile(bed_prefix + ".bed"))
+
+            # Creating a TPED with Plink
+            out_prefix = bed_prefix + "_recoded"
+            self._create_tped(self.plink_path, bed_prefix, out_prefix)
+
+            # Checking the files exists
+            self.assertTrue(os.path.isfile(out_prefix + ".tfam"))
+            self.assertTrue(os.path.isfile(out_prefix + ".tped"))
+
+            # Reading the TFAM just for the sample order
+            samples = None
+            with open(out_prefix + ".tfam", "r") as i_file:
+                samples = [
+                    i.rstrip("\r\n").split("\t")[1]
+                    for i in i_file.read().splitlines()
+                ]
+
+            # Comparing the genotypes
+            with open(out_prefix + ".tped", "r") as i_file:
+                for i, line in enumerate(i_file):
+                    row = line.rstrip("\r\n").split("\t")
+                    marker = row[1]
+
+                    # We skip directly to the observed genotypes
+                    for j, (sample, geno) in enumerate(zip(samples, row[4:])):
+                        self.assertEqual(
+                            sorted(geno.split(" ")),
+                            sorted(sample_geno[sample][marker].split(" ")),
+                        )
 
 
 class TestBeelineToolsExtract(unittest.TestCase):
