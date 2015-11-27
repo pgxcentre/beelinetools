@@ -1994,13 +1994,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             print("Some more information", file=f)
             print("Some final information", file=f)
 
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
             # We write the data
             print("[Data]", file=f)
             print("Sample ID", "SNP Name", "X", "Y",
@@ -2221,13 +2214,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             print("Num Used SNPs,{}".format(nb_markers), file=f)
             print("Some more information", file=f)
             print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
 
             # We write the data
             print("[Data]", file=f)
