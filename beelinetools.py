@@ -261,6 +261,10 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                     if other_opts.o_format == "ped":
                         pedfile.write("\t" + genotype)
                     else:
+                        if marker not in locations:
+                            raise ProgramError(
+                                "{}: no mapping information".format(marker)
+                            )
                         genotypes[current_marker_i] = encode_genotype(
                             allele_1,
                             allele_2,
