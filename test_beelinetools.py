@@ -2906,6 +2906,83 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             str(e.exception),
         )
 
+    def test_convert_beeline_bed_error_4(self):
+        """Tests the 'convert_beeline' function (missing column)."""
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # Creating a temporary file
+        tmp_filename = None
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print("Sample ID", "SNP Name", "X", "Y",
+                  "Allele1 - Forward", "B Allele Freq", "Log R Ratio", sep=",",
+                  file=f)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+
+                    # Printing the file
+                    print(sample_id, marker_id, random.uniform(0, 3),
+                          random.uniform(0, 3), a1, a2, random.random(),
+                          random.uniform(-10, 10), sep=",", file=f,)
+
+        # Generating mapping information
+        mapping_info = {}
+        for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
+            )
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.o_format = "bed"
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.convert_beeline(
+                i_filenames=[tmp_filename] * 2,
+                out_dir=self.tmp_dir,
+                locations=mapping_info,
+                other_opts=other_options,
+            )
+        self.assertEqual(
+            tmp_filename + ": 'Allele2 - Forward': missing column",
+            str(e.exception),
+        )
+
 
 class TestBeelineToolsExtract(unittest.TestCase):
     def setUp(self):
