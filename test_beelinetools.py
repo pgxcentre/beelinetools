@@ -3154,6 +3154,369 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             str(e.exception),
         )
 
+    def test_check_args_convert_bed(self):
+        """Tests the 'check_args' function for conversion."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+        args.allele_col = "SNP"
+        args.o_format = "bed"
+
+        # Executing the function
+        beelinetools.check_args(args)
+
+    def test_check_args_convert_bed_error_1(self):
+        """Tests the 'check_args' function (missing beeline report(s))."""
+        # Creating dummy Beeline reports (missing the third one)
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            if not filename.endswith("file_3.csv"):
+                with open(filename, "w") as o_file:
+                    pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+        args.o_format = "bed"
+
+        # Executing the function
+        self.assertFalse(os.path.isfile(beeline_reports[2]))
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            beeline_reports[2] + ": no such file",
+            str(e.exception),
+        )
+
+    def test_check_args_convert_bed_error_2(self):
+        """Tests the 'check_args' function (missing map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Not creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+        args.o_format = "bed"
+
+        # Executing the function
+        self.assertFalse(os.path.isfile(map_filename))
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": no such file",
+            str(e.exception),
+        )
+
+    def test_check_args_convert_bed_error_3(self):
+        """Tests the 'check_args' function (missing column in map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chromosome"
+        args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+        args.o_format = "bed"
+
+        # Executing the function
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": missing column 'Chromosome'",
+            str(e.exception),
+        )
+
+    def test_check_args_convert_bed_error_4(self):
+        """Tests the 'check_args' function (missing column in map file)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "snp"
+        args.output_dir = self.tmp_dir
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+        args.o_format = "bed"
+
+        # Executing the function
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            map_filename + ": missing column 'snp'",
+            str(e.exception),
+        )
+
+    def test_check_args_convert_bed_error_5(self):
+        """Tests the 'check_args' function (missing output directory)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # The missing directory
+        missing_directory = os.path.join(self.tmp_dir, "missing_dir")
+
+        # Creating dummy options
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
+        args.output_dir = missing_directory
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+        args.o_format = "bed"
+
+        # Executing the function
+        self.assertFalse(os.path.isdir(missing_directory))
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            missing_directory + ": no such directory",
+            str(e.exception),
+        )
+
+    @unittest.skipIf(platform.system() == "Windows",
+                     "Not a problem on windows systems")
+    def test_check_args_convert_bed_error_6(self):
+        """Tests the 'check_args' function (output directory not writable)."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # The output directory
+        output_directory = os.path.join(self.tmp_dir, "output_dir")
+        if not os.path.isdir(output_directory):
+            os.mkdir(output_directory)
+
+        args = _DummyArgs()
+        args.i_filenames = beeline_reports
+        args.map_filename = map_filename
+        args.delim = ","
+        args.id_col = "Name"
+        args.chr_col = "Chr"
+        args.pos_col = "MapInfo"
+        args.allele_col = "SNP"
+        args.output_dir = output_directory
+        args.nb_snps_kw = "Num Used SNPs"
+        args.analysis_type = "convert"
+        args.o_format = "bed"
+
+        # Executing the function
+        try:
+            # Changing the permission of the directory
+            os.chmod(output_directory, 0o111)
+
+            # Checking the arguments
+            with self.assertRaises(beelinetools.ProgramError) as e:
+                beelinetools.check_args(args)
+            self.assertEqual(
+                output_directory + ": not writable",
+                str(e.exception),
+            )
+
+        finally:
+            # Changing the permission back
+            os.chmod(output_directory, 0o750)
+
 
 class TestBeelineToolsExtract(unittest.TestCase):
     def setUp(self):
