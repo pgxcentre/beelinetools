@@ -2835,6 +2835,9 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         nb_samples = 3
         nb_markers = 10
 
+        # The mapping info
+        mapping_info = {}
+
         # Creating a temporary file
         tmp_filename = None
         with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
@@ -2867,10 +2870,19 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
                 for marker in range(nb_markers):
                     marker_id = "marker_{}".format(marker + 1)
+                    marker_alleles = alleles[marker_id]
+
+                    # Saving the mapping info
+                    mapping_info[marker_id] = beelinetools._Location(
+                        chrom=random.randint(1, 26),
+                        pos=random.randint(1, 1000000),
+                        alleles={
+                            a: b for a, b in zip(marker_alleles, ("A", "B"))
+                        },
+                    )
 
                     # Getting the possible alleles
                     missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
@@ -2879,16 +2891,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
                           random.uniform(-10, 10), sep=",", file=f,)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
 
         # Executing the function
         other_options = _DummyArgs()
@@ -2911,6 +2913,9 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         # The number of samples and of markers for this test
         nb_samples = 3
         nb_markers = 10
+
+        # The mapping info
+        mapping_info = {}
 
         # Creating a temporary file
         tmp_filename = None
@@ -2944,10 +2949,19 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
                 for marker in range(nb_markers):
                     marker_id = "marker_{}".format(marker + 1)
+                    marker_alleles = alleles[marker_id]
+
+                    # Saving the mapping info
+                    mapping_info[marker_id] = beelinetools._Location(
+                        chrom=random.randint(1, 26),
+                        pos=random.randint(1, 1000000),
+                        alleles={
+                            a: b for a, b in zip(marker_alleles, ("A", "B"))
+                        },
+                    )
 
                     # Getting the possible alleles
                     missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
@@ -2956,16 +2970,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
                           random.uniform(-10, 10), sep=",", file=f,)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
 
         # Executing the function
         other_options = _DummyArgs()
@@ -2988,6 +2992,9 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         # The number of samples and of markers for this test
         nb_samples = 3
         nb_markers = 10
+
+        # The mapping info
+        mapping_info = {}
 
         # Creating a temporary file
         tmp_filename = None
@@ -3021,6 +3028,16 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
                 for marker in range(nb_markers):
                     marker_id = "marker_{}".format(marker + 1)
+                    marker_alleles = alleles[marker_id]
+
+                    # Saving the mapping info
+                    mapping_info[marker_id] = beelinetools._Location(
+                        chrom=random.randint(1, 26),
+                        pos=random.randint(1, 1000000),
+                        alleles={
+                            a: b for a, b in zip(marker_alleles, ("A", "B"))
+                        },
+                    )
 
                     # We want to switch markers for sample 2
                     if sample_id == "sample_2":
@@ -3031,7 +3048,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
                     # Getting the possible alleles
                     missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
@@ -3040,16 +3056,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
                           random.uniform(-10, 10), sep=",", file=f,)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
 
         # Executing the function
         other_options = _DummyArgs()
