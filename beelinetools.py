@@ -9,7 +9,7 @@ import re
 import sys
 import logging
 import argparse
-from collections import namedtuple, Counter
+from collections import namedtuple
 from tempfile import NamedTemporaryFile
 
 try:
@@ -454,7 +454,6 @@ def split_report(i_filenames, out_dir, locations, other_opts):
                         o_file.write(metadata)
 
                     # Printing the header row
-                    header_to_print = header_row
                     if other_opts.add_mapping:
                         print("Chr", "Pos", sep=other_opts.o_delim,
                               end=other_opts.o_delim, file=o_file)
@@ -596,14 +595,9 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
 
         # Reading the file
         try:
-            # The number of markers and samples
-            nb_markers = None
-
             # Getting to the data
             line = i_file.readline()
             while not line.startswith("[Data]"):
-                if line.startswith(other_opts.nb_snps_kw):
-                    nb_markers = int(line.rstrip("\r\n").split(",")[-1])
                 line = i_file.readline()
 
             # Reading and checking the header
@@ -629,9 +623,6 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
                     to_add += name + ","
                     name_to_add.add(name)
             new_header_line = to_add + header_line
-
-            # The number of samples
-            nb_samples = 0
 
             # Reading the first data line
             line = i_file.readline()
@@ -906,7 +897,7 @@ def check_args(args):
                 "{}: no such directory".format(args.output_dir)
             )
         try:
-            with NamedTemporaryFile(dir=args.output_dir) as tmp_file:
+            with NamedTemporaryFile(dir=args.output_dir):
                 pass
         except OSError:
             raise ProgramError(
