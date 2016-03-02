@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 import re
 import sys
+import stat
 import logging
 import argparse
 from collections import namedtuple
@@ -81,6 +82,7 @@ def main():
         elif args.analysis_type == "extract":
             # Reading the list of samples to keep
             samples_to_keep = read_list(args.samples_to_keep)
+            markers_to_extract = read_list(args.markers_to_extract)
 
             # Extracting from the beeline report(s)
             extract_beeline(
@@ -89,6 +91,7 @@ def main():
                 o_suffix=args.o_suffix,
                 locations=map_data,
                 samples=samples_to_keep,
+                markers=markers_to_extract,
                 other_opts=args,
             )
 
@@ -552,7 +555,7 @@ def split_report(i_filenames, out_dir, locations, other_opts):
 
 
 def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
-                    other_opts):
+                    markers, other_opts):
     """Extracts information from beeline report(s).
 
     Args:
@@ -561,6 +564,7 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
         o_suffix (str): the suffix to add to the output file(s)
         locations (dict): a dictionary from marker ID to genomic location
         samples (set): a set of samples to keep
+        markers (set): a set of markers to extract
         other_opts(argparse.Namespace): the program options
 
     """
@@ -609,6 +613,8 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
             required_columns = ["SNP Name"]
             if other_opts.samples_to_keep is not None:
                 required_columns.append("Sample ID")
+            if other_opts.markers_to_extract is not None:
+                required_columns.append("SNP Name")
             for name in required_columns:
                 if name not in header:
                     raise ProgramError(
@@ -651,6 +657,13 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
                     # Getting the marker information
                     marker = row[header["SNP Name"]]
                     marker_location = locations.get(marker, _unknown_location)
+
+                    # Extract a subset of markers?
+                    if other_opts.markers_to_extract is not None:
+                        if marker not in markers:
+                            line = i_file.readline()
+                            continue
+
                     if marker_location.chrom in chrom:
                         to_add = ""
                         if "Chr" in name_to_add:
@@ -745,10 +758,10 @@ def read_list(i_filename):
     """
     elements = set()
     if i_filename is not None:
-        logging.info("Reading list of samples to keep")
+        logging.info("Reading {}".format(i_filename))
         with open(i_filename, "r") as i_file:
             elements = set(i_file.read().splitlines())
-        logging.info("  - {:,d} samples to keep".format(len(elements)))
+        logging.info("  - {:,d} elements".format(len(elements)))
 
     return elements
 
@@ -917,9 +930,31 @@ def check_args(args):
 
         # List of samples to keep
         if args.samples_to_keep is not None:
-            if not os.path.isfile(args.samples_to_keep):
-                raise ProgramError("{}: no such "
-                                   "file".format(args.samples_to_keep))
+            if not is_file_like(args.samples_to_keep):
+                raise ProgramError(
+                    "{}: no such file".format(args.samples_to_keep)
+                )
+
+        # List of markers to extract
+        if args.markers_to_extract is not None:
+            if not is_file_like(args.markers_to_extract):
+                raise ProgramError(
+                    "{}: no such file".format(args.markers_to_extract)
+                )
+
+
+def is_file_like(fn):
+    """Checks if the path is like a file (it might be a named pipe).
+
+    Args:
+        fn (str): the path to check
+
+    Returns:
+        bool: True if path is like a file, False otherwise.
+
+    """
+    return os.path.isfile(fn) or (os.path.exists(fn) and
+                                  stat.S_ISFIFO(os.stat(fn).st_mode))
 
 
 def parse_args(parser):
@@ -1134,7 +1169,15 @@ def parse_args(parser):
         type=str,
         metavar="FILE",
         dest="samples_to_keep",
-        help="A list of samples to extract",
+        help="A list of samples to keep",
+    )
+    group.add_argument(
+        "-e",
+        "--extract",
+        type=str,
+        metavar="FILE",
+        dest="markers_to_extract",
+        help="A list of markers to extract",
     )
 
     # The output options
