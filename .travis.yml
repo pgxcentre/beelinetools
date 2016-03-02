@@ -7,4 +7,5 @@ python:
 before_install:
   - "pip install -U pip"
   - "pip install six"
+  - "pip install pyplink"
 script: "python test_beelinetools.py"

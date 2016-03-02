@@ -13,6 +13,12 @@ from collections import namedtuple
 from tempfile import NamedTemporaryFile
 
 try:
+    from pyplink import PyPlink
+    _HAS_PYPLINK = True
+except ImportError:
+    _HAS_PYPLINK = False
+
+try:
     from six.moves import range, zip
 except ImportError:
     pass
@@ -31,6 +37,7 @@ _unknown_location = _Location(chrom=0, pos=0, alleles={})
 
 # The complement
 _complement = {"A": "T", "T": "A", "C": "G", "G": "C", "-": "-"}
+_geno_add_encoding = {"AA": 0, "AB": 1, "BA": 1, "BB": 2}
 
 
 def main():
@@ -135,6 +142,30 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             i_file = sys.stdin
             o_filename = "from_stdin"
 
+        # The output files
+        prefix = os.path.join(out_dir, o_filename)
+        pedfile = None
+        mapfile = None
+        bedfile = None
+        bimfile = None
+        famfile = None
+        sample_file = None
+        sample_file_end = None
+        sample_file_sep = None
+        if other_opts.o_format == "ped":
+            pedfile = open(prefix + ".ped", "w")
+            mapfile = open(prefix + ".map", "w")
+            sample_file = pedfile
+            sample_file_end = ""
+            sample_file_sep = "\t"
+        elif other_opts.o_format == "bed":
+            bedfile = PyPlink(prefix, "w", "INDIVIDUAL-major")
+            bimfile = open(prefix + ".bim", "w")
+            famfile = open(prefix + ".fam", "w")
+            sample_file = famfile
+            sample_file_end = "\n"
+            sample_file_sep = " "
+
         # Reading the file (or STDIN)
         try:
             # The number of markers
@@ -179,102 +210,111 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             all_markers = [None for i in range(nb_markers)]
             nb_samples = 0
 
+            # The genotypes (if in BED format)
+            genotypes = None
+            if other_opts.o_format == "bed":
+                genotypes = [-1 for i in range(nb_markers)]
+
             # Reading the first data line
             line = i_file.readline()
             row = line.rstrip("\r\n").split(",")
 
-            # The pedfile
-            pedfile = os.path.join(out_dir, o_filename + ".ped")
-            with open(pedfile, "w") as pedfile:
-                while line != "":
-                    # Getting the marker name and sample id
-                    sample = row[header["Sample ID"]]
-                    if sample in seen_samples:
-                        logging.warning("{}: duplicate sample "
-                                        "found".format(sample))
-                    seen_samples.add(sample)
+            while line != "":
+                # Getting the marker name and sample id
+                sample = row[header["Sample ID"]]
+                if sample in seen_samples:
+                    logging.warning("{}: duplicate sample "
+                                    "found".format(sample))
+                seen_samples.add(sample)
 
-                    # Logging
-                    logging.info("Processing {}".format(sample))
-                    # Printing the starting of the file
-                    print(sample, sample, "0", "0", "0", "-9", sep="\t",
-                          end="", file=pedfile)
+                # Logging
+                logging.info("Processing {}".format(sample))
+                print(sample, sample, "0", "0", "0", "-9", sep=sample_file_sep,
+                      end=sample_file_end, file=sample_file)
 
-                    # Reading the rest of the data for this sample
-                    current_sample = sample
-                    while current_sample == sample:
-                        # Checking the marker order
-                        marker = row[header["SNP Name"]]
+                # Reading the rest of the data for this sample
+                current_sample = sample
+                while current_sample == sample:
+                    # Checking the marker order
+                    marker = row[header["SNP Name"]]
 
-                        # If the index is > than the length, it might be a
-                        # duplicated sample...
-                        if current_marker_i == len(all_markers):
-                            break
+                    # If the index is > than the length, it might be a
+                    # duplicated sample...
+                    if current_marker_i == len(all_markers):
+                        break
 
-                        if all_markers[current_marker_i] is None:
-                            all_markers[current_marker_i] = marker
-                        if all_markers[current_marker_i] != marker:
+                    if all_markers[current_marker_i] is None:
+                        all_markers[current_marker_i] = marker
+                    if all_markers[current_marker_i] != marker:
+                        raise ProgramError(
+                            "{}: marker order is not the same for "
+                            "sample '{}'".format(i_filename, sample)
+                        )
+
+                    # Getting the genotype
+                    allele_1 = row[header["Allele1 - Forward"]]
+                    allele_2 = row[header["Allele2 - Forward"]]
+                    genotype = "{} {}".format(allele_1, allele_2)
+                    if "-" in genotype:
+                        genotype = "0 0"
+
+                    if other_opts.o_format == "ped":
+                        pedfile.write("\t" + genotype)
+                    else:
+                        if marker not in locations:
                             raise ProgramError(
-                                "{}: marker order is not the same for "
-                                "sample '{}'".format(i_filename, sample)
+                                "{}: no mapping information".format(marker)
                             )
-
-                        # Getting the genotype
-                        genotype = "{} {}".format(
-                            row[header["Allele1 - Forward"]],
-                            row[header["Allele2 - Forward"]],
-                        )
-                        if "-" in genotype:
-                            genotype = "0 0"
-
-                        print("\t" + genotype, sep="\t", end="", file=pedfile)
-
-                        # Increasing the current marker
-                        current_marker_i += 1
-
-                        # Reading the next row
-                        line = i_file.readline()
-                        if line == "":
-                            # End of file
-                            break
-
-                        # Splitting and current sample
-                        row = line.rstrip("\r\n").split(",")
-                        current_sample = row[header["Sample ID"]]
-
-                    print("\n", sep="\t", end="", file=pedfile)
-
-                    # If there is only one marker, there is a problem
-                    if nb_markers != 1 and current_marker_i == 1:
-                        raise ProgramError(
-                            "{}: data should be sorted by samples, not by "
-                            "markers ('{}' had 1 marker, expecting "
-                            "{:,d}".format(i_filename, sample, nb_markers)
+                        genotypes[current_marker_i] = encode_genotype(
+                            allele_1,
+                            allele_2,
+                            locations[marker].alleles,
                         )
 
-                    # Are there any missing marker?
-                    if current_marker_i != nb_markers:
-                        nb_missing = abs(current_marker_i - nb_markers)
-                        raise ProgramError(
-                            "{}: missing {} marker{} for sample '{}'".format(
-                                i_filename,
-                                nb_missing,
-                                "s" if nb_missing > 1 else "",
-                                sample,
-                            )
+                    # Increasing the current marker
+                    current_marker_i += 1
+
+                    # Reading the next row
+                    line = i_file.readline()
+                    if line == "":
+                        # End of file
+                        break
+
+                    # Splitting and current sample
+                    row = line.rstrip("\r\n").split(",")
+                    current_sample = row[header["Sample ID"]]
+
+                if other_opts.o_format == "ped":
+                    pedfile.write("\n")
+                else:
+                    bedfile.write_genotypes(genotypes)
+
+                # If there is only one marker, there is a problem
+                if nb_markers != 1 and current_marker_i == 1:
+                    raise ProgramError(
+                        "{}: data should be sorted by samples, not by "
+                        "markers ('{}' had 1 marker, expecting "
+                        "{:,d}".format(i_filename, sample, nb_markers)
+                    )
+
+                # Are there any missing marker?
+                if current_marker_i != nb_markers:
+                    nb_missing = abs(current_marker_i - nb_markers)
+                    raise ProgramError(
+                        "{}: missing {} marker{} for sample '{}'".format(
+                            i_filename,
+                            nb_missing,
+                            "s" if nb_missing > 1 else "",
+                            sample,
                         )
-                    current_marker_i = 0
-                    nb_samples += 1
+                    )
+                current_marker_i = 0
+                nb_samples += 1
 
             # Closing the output files
             logging.info("Done writing {:,d} samples".format(nb_samples))
 
-        finally:
-            i_file.close()
-
-        # Printing the map file
-        map_filename = os.path.join(out_dir, o_filename + ".map")
-        with open(map_filename, "w") as o_file:
+            # Printing the map file
             for marker in all_markers:
                 marker_location = None
                 if marker in locations:
@@ -283,8 +323,47 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                     marker_location = _unknown_location
                     logging.warning("{}: no mapping "
                                     "information".format(marker))
-                print(marker_location.chrom, marker, "0",
-                      marker_location.pos, sep="\t", file=o_file)
+                if other_opts.o_format == "ped":
+                    print(marker_location.chrom, marker, "0",
+                          marker_location.pos, sep="\t", file=mapfile)
+                else:
+                    alleles = {
+                        v: k for k, v in marker_location.alleles.items()
+                    }
+                    print(marker_location.chrom, marker, "0",
+                          marker_location.pos, alleles["B"], alleles["A"],
+                          sep="\t", file=bimfile)
+
+        finally:
+            # Closing the input file
+            i_file.close()
+
+            # Closing the output files
+            for f in (pedfile, mapfile, bedfile, bimfile, famfile):
+                if f is not None:
+                    f.close()
+
+
+def encode_genotype(a1, a2, encoding):
+    """Encode a genotype according to its A/B alleles.
+
+    Args:
+        geno (str): the genotype to encode
+        encoding (dict): the genotype encoding
+
+    Returns:
+        int: the encoded genotype
+
+    Note
+    ----
+        The encoding is as follow, 0 for the AA genotype, 1 for the AB
+        genotype, and 2 for the BB genotype. Unknown genotype is encoded as -1.
+
+    """
+    return _geno_add_encoding.get(
+        encode_allele(a1, encoding) + encode_allele(a2, encoding),
+        -1,
+    )
 
 
 def split_report(i_filenames, out_dir, locations, other_opts):
@@ -375,7 +454,6 @@ def split_report(i_filenames, out_dir, locations, other_opts):
                         o_file.write(metadata)
 
                     # Printing the header row
-                    header_to_print = header_row
                     if other_opts.add_mapping:
                         print("Chr", "Pos", sep=other_opts.o_delim,
                               end=other_opts.o_delim, file=o_file)
@@ -500,10 +578,8 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
         nb_extracted_markers = 0
 
         # Getting the output filename
-        o_filename = os.path.join(
-            out_dir,
-            os.path.basename(os.path.splitext(i_filename)[0]),
-        ) + o_suffix + ".csv"
+        o_filename = os.path.basename(os.path.splitext(i_filename)[0])
+        o_filename += o_suffix + ".csv"
 
         # Opening the file
         i_file = None
@@ -514,16 +590,14 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
             i_file = sys.stdin
             o_filename = "from_stdin" + o_suffix + ".csv"
 
+        # Joining the paths
+        o_filename = os.path.join(out_dir, o_filename)
+
         # Reading the file
         try:
-            # The number of markers and samples
-            nb_markers = None
-
             # Getting to the data
             line = i_file.readline()
             while not line.startswith("[Data]"):
-                if line.startswith(other_opts.nb_snps_kw):
-                    nb_markers = int(line.rstrip("\r\n").split(",")[-1])
                 line = i_file.readline()
 
             # Reading and checking the header
@@ -549,9 +623,6 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
                     to_add += name + ","
                     name_to_add.add(name)
             new_header_line = to_add + header_line
-
-            # The number of samples
-            nb_samples = 0
 
             # Reading the first data line
             line = i_file.readline()
@@ -781,6 +852,11 @@ def check_args(args):
         If there is a problem, a :py:class:`ProgramError` is raised.
 
     """
+    # Checking the output format if present
+    if args.analysis_type == "convert":
+        if (args.o_format == "bed") and (not _HAS_PYPLINK):
+            raise ProgramError("BED format requires pyplink module")
+
     # Checking the input file(s)
     if (len(args.i_filenames) == 1) and (args.i_filenames[0] == "-"):
         # Checking if we have only one input file and its '-' (stdin)
@@ -821,7 +897,7 @@ def check_args(args):
                 "{}: no such directory".format(args.output_dir)
             )
         try:
-            with NamedTemporaryFile(dir=args.output_dir) as tmp_file:
+            with NamedTemporaryFile(dir=args.output_dir):
                 pass
         except OSError:
             raise ProgramError(
@@ -978,6 +1054,19 @@ def parse_args(parser):
                     "more commonly used, format (such as Plink) "
                     "(version {}).".format(__version__),
         parents=[p_parser],
+    )
+
+    # The different format
+    group = convert_parser.add_argument_group("Output Format")
+    group.add_argument(
+        "--format",
+        type=str,
+        metavar="FORMAT",
+        choices={"bed", "ped"},
+        default="bed",
+        dest="o_format",
+        help="The output format (one of 'bed' or 'ped' for binary or "
+             "normal pedfile format from Plink) [%(default)s].",
     )
 
     # The sample split parser
