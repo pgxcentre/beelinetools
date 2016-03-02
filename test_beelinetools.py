@@ -3672,12 +3672,14 @@ class TestBeelineToolsExtract(unittest.TestCase):
         other_options.chrom = chrom_to_extract
         other_options.o_delim = ","
         other_options.samples_to_keep = None
+        other_options.markers_to_extract = None
         beelinetools.extract_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
             o_suffix="_test_extract",
             locations=mapping_info,
             samples=set(),
+            markers=set(),
             other_opts=other_options,
         )
 
@@ -3840,12 +3842,14 @@ class TestBeelineToolsExtract(unittest.TestCase):
         other_options.chrom = chrom_to_extract
         other_options.o_delim = "\t"
         other_options.samples_to_keep = None
+        other_options.markers_to_extract = None
         beelinetools.extract_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
             o_suffix="_test_extract",
             locations=mapping_info,
             samples=set(),
+            markers=set(),
             other_opts=other_options,
         )
 
@@ -4014,12 +4018,14 @@ class TestBeelineToolsExtract(unittest.TestCase):
         other_options.chrom = chrom_to_extract
         other_options.o_delim = ","
         other_options.samples_to_keep = sample_filename
+        other_options.markers_to_extract = None
         beelinetools.extract_beeline(
             i_filenames=[tmp_filename, tmp_filename_2],
             out_dir=self.tmp_dir,
             o_suffix="_test_extract",
             locations=mapping_info,
             samples=set("sample_2"),
+            markers=set(),
             other_opts=other_options,
         )
 
@@ -4088,6 +4094,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
         args.samples_to_keep = None
+        args.markers_to_extract = None
         args.chrom = ["1", "2", "X"]
 
         # Executing the function
