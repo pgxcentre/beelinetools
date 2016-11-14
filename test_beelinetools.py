@@ -170,10 +170,10 @@ class TestBeelineTools(unittest.TestCase):
         observed = beelinetools.read_mapping_info(
             i_filename=tmp_filename,
             delim=",",
-            id_col="Name",
-            chr_col="Chr",
-            pos_col="MapInfo",
-            allele_col="SNP",
+            map_id="Name",
+            map_chr="Chr",
+            map_pos="MapInfo",
+            map_allele="SNP",
         )
         self.assertEqual(expected, observed)
 
@@ -192,10 +192,10 @@ class TestBeelineTools(unittest.TestCase):
         observed = beelinetools.read_mapping_info(
             i_filename=tmp_filename,
             delim=",",
-            id_col="Name",
-            chr_col="Chr",
-            pos_col="MapInfo",
-            allele_col="SNP",
+            map_id="Name",
+            map_chr="Chr",
+            map_pos="MapInfo",
+            map_allele="SNP",
         )
         self.assertEqual(expected, observed)
 
@@ -370,6 +370,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         beelinetools.convert_beeline(
@@ -566,6 +570,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
@@ -737,6 +745,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -868,6 +880,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num SNPs"
         other_options.o_format = "ped"
         beelinetools.convert_beeline(
@@ -1012,6 +1028,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1093,6 +1113,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function (should raise a warning)
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
@@ -1251,6 +1275,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1328,6 +1356,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1412,6 +1444,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1490,6 +1526,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1539,14 +1579,14 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
-        args.allele_col = "SNP"
+        args.map_allele = "SNP"
         args.o_format = "ped"
 
         # Executing the function
@@ -1587,10 +1627,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -1623,10 +1663,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -1675,11 +1715,11 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chromosome"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chromosome"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -1727,11 +1767,11 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "snp"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "snp"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -1782,11 +1822,11 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = missing_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -1841,11 +1881,11 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -2022,6 +2062,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         beelinetools.convert_beeline(
@@ -2243,6 +2287,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
@@ -2434,6 +2482,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2566,6 +2618,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num SNPs"
         other_options.o_format = "bed"
         beelinetools.convert_beeline(
@@ -2734,6 +2790,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2818,6 +2875,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function (should raise a warning)
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as cm:
@@ -2894,6 +2955,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2973,6 +3038,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -3059,6 +3128,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -3139,6 +3212,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -3188,14 +3265,14 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
-        args.allele_col = "SNP"
+        args.map_allele = "SNP"
         args.o_format = "bed"
 
         # Executing the function
@@ -3236,10 +3313,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -3272,10 +3349,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -3324,11 +3401,11 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chromosome"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chromosome"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -3376,11 +3453,11 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "snp"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "snp"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -3431,11 +3508,11 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = missing_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -3490,11 +3567,11 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "convert"
@@ -3668,6 +3745,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
         other_options.o_delim = ","
@@ -3836,6 +3914,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
         other_options.o_delim = "\t"
@@ -4010,6 +4089,8 @@ class TestBeelineToolsExtract(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
         other_options.o_delim = ","
@@ -4079,11 +4160,11 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4141,10 +4222,10 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4178,10 +4259,10 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4231,11 +4312,11 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chromosome"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chromosome"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4284,11 +4365,11 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "snp"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "snp"
         args.output_dir = self.tmp_dir
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4340,11 +4421,11 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = missing_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4400,11 +4481,11 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4466,11 +4547,11 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
@@ -4523,11 +4604,11 @@ class TestBeelineToolsExtract(unittest.TestCase):
         args = _DummyArgs()
         args.i_filenames = beeline_reports
         args.map_filename = map_filename
-        args.delim = ","
-        args.id_col = "Name"
-        args.chr_col = "Chr"
-        args.pos_col = "MapInfo"
-        args.allele_col = "SNP"
+        args.map_delim = ","
+        args.map_id = "Name"
+        args.map_chr = "Chr"
+        args.map_pos = "MapInfo"
+        args.map_allele = "SNP"
         args.output_dir = output_directory
         args.nb_snps_kw = "Num Used SNPs"
         args.analysis_type = "extract"
