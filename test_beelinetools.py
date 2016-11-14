@@ -370,6 +370,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         beelinetools.convert_beeline(
@@ -566,6 +570,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
@@ -737,6 +745,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -868,6 +880,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num SNPs"
         other_options.o_format = "ped"
         beelinetools.convert_beeline(
@@ -1012,6 +1028,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1093,6 +1113,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function (should raise a warning)
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
@@ -1251,6 +1275,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1328,6 +1356,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1412,6 +1444,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -1490,6 +1526,10 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2022,6 +2062,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         beelinetools.convert_beeline(
@@ -2243,6 +2287,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self._my_compatibility_assertLogs(level="WARNING") as cm:
@@ -2434,6 +2482,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2566,6 +2618,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num SNPs"
         other_options.o_format = "bed"
         beelinetools.convert_beeline(
@@ -2734,6 +2790,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2818,6 +2875,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function (should raise a warning)
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as cm:
@@ -2894,6 +2955,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -2973,6 +3038,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -3059,6 +3128,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -3139,6 +3212,10 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.o_format = "bed"
         with self.assertRaises(beelinetools.ProgramError) as e:
@@ -3668,6 +3745,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
         other_options.o_delim = ","
@@ -3836,6 +3914,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
         other_options.o_delim = "\t"
@@ -4010,6 +4089,8 @@ class TestBeelineToolsExtract(unittest.TestCase):
 
         # Executing the function
         other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
         other_options.nb_snps_kw = "Num Used SNPs"
         other_options.chrom = chrom_to_extract
         other_options.o_delim = ","

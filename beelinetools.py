@@ -197,8 +197,10 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                 for i, name in
                 enumerate(i_file.readline().rstrip("\r\n").split(","))
             }
-            required_columns = ("SNP Name", "Sample ID", "Allele1 - Forward",
-                                "Allele2 - Forward")
+            required_columns = (
+                other_opts.beeline_id, other_opts.beeline_sample,
+                other_opts.beeline_a1, other_opts.beeline_a2,
+            )
             for name in required_columns:
                 if name not in header:
                     raise ProgramError(
@@ -221,7 +223,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
 
             while line != "":
                 # Getting the marker name and sample id
-                sample = row[header["Sample ID"]]
+                sample = row[header[other_opts.beeline_sample]]
                 if sample in seen_samples:
                     logging.warning("{}: duplicate sample "
                                     "found".format(sample))
@@ -236,7 +238,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                 current_sample = sample
                 while current_sample == sample:
                     # Checking the marker order
-                    marker = row[header["SNP Name"]]
+                    marker = row[header[other_opts.beeline_id]]
 
                     # If the index is > than the length, it might be a
                     # duplicated sample...
@@ -252,8 +254,8 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                         )
 
                     # Getting the genotype
-                    allele_1 = row[header["Allele1 - Forward"]]
-                    allele_2 = row[header["Allele2 - Forward"]]
+                    allele_1 = row[header[other_opts.beeline_a1]]
+                    allele_2 = row[header[other_opts.beeline_a2]]
                     genotype = "{} {}".format(allele_1, allele_2)
                     if "-" in genotype:
                         genotype = "0 0"
@@ -282,7 +284,7 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
 
                     # Splitting and current sample
                     row = line.rstrip("\r\n").split(",")
-                    current_sample = row[header["Sample ID"]]
+                    current_sample = row[header[other_opts.beeline_sample]]
 
                 if other_opts.o_format == "ped":
                     pedfile.write("\n")
@@ -421,8 +423,9 @@ def split_report(i_filenames, out_dir, locations, other_opts):
             # Reading and checking the header
             header_row = i_file.readline().rstrip("\r\n").split(",")
             header = {name: i for i, name in enumerate(header_row)}
-            required_columns = ("SNP Name", "Sample ID", "Allele1 - Forward",
-                                "Allele2 - Forward")
+            required_columns = (
+                other_opts.beeline_id, other_opts.beeline_sample,
+                other_opts.beeline_a1, other_opts.beeline_a2)
             for name in required_columns:
                 if name not in header:
                     raise ProgramError(
@@ -440,7 +443,7 @@ def split_report(i_filenames, out_dir, locations, other_opts):
 
             while line != "":
                 # Getting the marker name and sample id
-                sample = row[header["Sample ID"]]
+                sample = row[header[other_opts.beeline_sample]]
                 if sample in seen_samples:
                     logging.warning("{}: duplicate sample found, output file "
                                     "will be overwritten".format(sample))
@@ -469,7 +472,7 @@ def split_report(i_filenames, out_dir, locations, other_opts):
                     current_sample = sample
                     while current_sample == sample:
                         # Checking the marker order
-                        marker = row[header["SNP Name"]]
+                        marker = row[header[other_opts.beeline_id]]
 
                         # If the index is > than the length, it might be a
                         # duplicated sample...
@@ -495,11 +498,11 @@ def split_report(i_filenames, out_dir, locations, other_opts):
                         if other_opts.add_ab:
                             # Adding A/B alleles
                             allele_1 = encode_allele(
-                                allele=row[header["Allele1 - Forward"]],
+                                allele=row[header[other_opts.beeline_a1]],
                                 encoding=allele_encoding,
                             )
                             allele_2 = encode_allele(
-                                allele=row[header["Allele2 - Forward"]],
+                                allele=row[header[other_opts.beeline_a2]],
                                 encoding=allele_encoding,
                             )
                             print(*sorted([allele_1, allele_2]),
@@ -520,7 +523,7 @@ def split_report(i_filenames, out_dir, locations, other_opts):
 
                         # Splitting and current sample
                         row = line.rstrip("\r\n").split(",")
-                        current_sample = row[header["Sample ID"]]
+                        current_sample = row[header[other_opts.beeline_sample]]
 
                     # If there is only one marker, there is a problem
                     if nb_markers != 1 and current_marker_i == 1:
@@ -606,9 +609,9 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
                 name: i for i, name in
                 enumerate(header_line.rstrip("\r\n").split(","))
             }
-            required_columns = ["SNP Name"]
+            required_columns = [other_opts.beeline_id]
             if other_opts.samples_to_keep is not None:
-                required_columns.append("Sample ID")
+                required_columns.append(other_opts.beeline_sample)
             for name in required_columns:
                 if name not in header:
                     raise ProgramError(
@@ -643,13 +646,13 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
 
                     # Keep a subset of samples?
                     if other_opts.samples_to_keep is not None:
-                        sample = row[header["Sample ID"]]
+                        sample = row[header[other_opts.beeline_sample]]
                         if sample not in samples:
                             line = i_file.readline()
                             continue
 
                     # Getting the marker information
-                    marker = row[header["SNP Name"]]
+                    marker = row[header[other_opts.beeline_id]]
                     marker_location = locations.get(marker, _unknown_location)
                     if marker_location.chrom in chrom:
                         to_add = ""
@@ -962,6 +965,29 @@ def parse_args(parser):
         "-m", "--map", type=str, metavar="FILE", dest="map_filename",
         required=True,
         help="The name of the file containing mapping information.",
+    )
+
+    # The Beeline options
+    group = p_parser.add_argument_group("Beeline Options")
+    group.add_argument(
+        "--beeline-id", type=str, metavar="COL", default="SNP Name",
+        help="The name of the column containing the marker identification "
+             "number for beeline [%(default)s]",
+    )
+    group.add_argument(
+        "--beeline-sample", type=str, metavar="COL", default="Sample ID",
+        help="The name of the column containing the sample identification "
+             "number for beeline [%(default)s]",
+    )
+    group.add_argument(
+        "--beeline-a1", type=str, metavar="COL", default="Allele1 - Forward",
+        help="The name of the column containing the first allele for beeline "
+             "[%(default)s]",
+    )
+    group.add_argument(
+        "--beeline-a2", type=str, metavar="COL", default="Allele2 - Forward",
+        help="The name of the column containing the second allele for beeline "
+             "[%(default)s]",
     )
 
     # The mapping options
