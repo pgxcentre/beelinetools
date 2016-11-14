@@ -62,11 +62,11 @@ def main():
         # Reading the map file
         map_data = read_mapping_info(
             args.map_filename,
-            delim=args.delim,
-            id_col=args.id_col,
-            chr_col=args.chr_col,
-            pos_col=args.pos_col,
-            allele_col=args.allele_col,
+            delim=args.map_delim,
+            map_id=args.map_id,
+            map_chr=args.map_chr,
+            map_pos=args.map_pos,
+            map_allele=args.map_allele,
         )
 
         if args.analysis_type == "convert":
@@ -682,16 +682,16 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
         ))
 
 
-def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col, allele_col):
+def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele):
     """Reads the mapping information to gather genomic locations.
 
     Args:
         i_filename (str): the name of the input file
         delim (str): the field delimiter
-        id_col (str): the name of the column containing marker ID
-        chr_col (str): the name of the column containing the chromosome
-        pos_col (str): the name of the column containing the position
-        allele_col (str): the name of the column containing the alleles
+        map_id (str): the name of the column containing marker ID
+        map_chr (str): the name of the column containing the chromosome
+        map_pos (str): the name of the column containing the position
+        map_allele (str): the name of the column containing the alleles
 
     Returns:
         dict: a dictionary from marker ID to genomic location
@@ -711,12 +711,12 @@ def read_mapping_info(i_filename, delim, id_col, chr_col, pos_col, allele_col):
             row = line.rstrip("\r\n").split(delim)
 
             # Gathering the mapping information
-            name = row[header[id_col]]
-            chrom = encode_chromosome(row[header[chr_col]])
-            pos = int(row[header[pos_col]])
+            name = row[header[map_id]]
+            chrom = encode_chromosome(row[header[map_chr]])
+            pos = int(row[header[map_pos]])
 
             # Splitting the alleles
-            alleles = row[header[allele_col]].split("/")
+            alleles = row[header[map_allele]].split("/")
             a_allele = alleles[0][1:]
             b_allele = alleles[1][:-1]
 
@@ -880,10 +880,10 @@ def check_args(args):
     # Checking the columns are inside the map file
     with open(args.map_filename, "r") as i_file:
         # Reading the header
-        header = get_header(i_file, args.delim, "[Assay]")
+        header = get_header(i_file, args.map_delim, "[Assay]")
 
         # Checking the column
-        for name in (args.id_col, args.chr_col, args.pos_col, args.allele_col):
+        for name in (args.map_id, args.map_chr, args.map_pos, args.map_allele):
             if name not in header:
                 raise ProgramError("{}: missing column '{}'".format(
                     args.map_filename,
@@ -980,7 +980,7 @@ def parse_args(parser):
     # The mapping options
     group = p_parser.add_argument_group("Mapping Options")
     group.add_argument(
-        "--id-col",
+        "--map-id",
         type=str,
         metavar="COL",
         default="Name",
@@ -988,28 +988,28 @@ def parse_args(parser):
              "numbers [%(default)s]",
     )
     group.add_argument(
-        "--chr-col",
+        "--map-chr",
         type=str,
         metavar="COL",
         default="Chr",
         help="The name of the column containing the chromosome [%(default)s]",
     )
     group.add_argument(
-        "--pos-col",
+        "--map-pos",
         type=str,
         metavar="COL",
         default="MapInfo",
         help="The name of the column containing the position [%(default)s]",
     )
     group.add_argument(
-        "--allele-col",
+        "--map-allele",
         type=str,
         metavar="COL",
         default="SNP",
         help="The name of the column containing the alleles [%(default)s]",
     )
     group.add_argument(
-        "--delim",
+        "--map-delim",
         type=str,
         metavar="SEP",
         default=",",
