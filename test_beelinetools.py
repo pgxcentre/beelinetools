@@ -4,14 +4,12 @@
 from __future__ import print_function
 
 import os
-import re
 import shutil
 import random
 import logging
 import platform
 import unittest
 import collections
-from io import StringIO
 from collections import defaultdict
 from subprocess import check_call, PIPE
 from tempfile import mkdtemp, NamedTemporaryFile
@@ -710,7 +708,6 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -726,7 +723,6 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -1009,7 +1005,6 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -1256,7 +1251,6 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -1337,7 +1331,6 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -1425,7 +1418,6 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -1507,7 +1499,6 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -1653,7 +1644,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             for i in range(10)
         ]
         for filename in beeline_reports:
-            with open(filename, "w") as o_file:
+            with open(filename, "w"):
                 pass
 
         # Not creating a dummy map file
@@ -2118,7 +2109,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             self.assertTrue(os.path.isfile(fam_filename))
 
             # Checking the ped file content
-            seen_samples = set()
             with open(fam_filename, "r") as i_file:
                 for i, line in enumerate(i_file):
                     # Gathering the information
@@ -2350,7 +2340,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             self.assertTrue(os.path.isfile(fam_filename))
 
             # Checking the file content
-            seen_samples = set()
             with open(fam_filename, "r") as i_file:
                 for i, line in enumerate(i_file):
                     # Gathering the information
@@ -2455,7 +2444,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     missing = random.random() < 0.1
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -2473,7 +2461,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     missing = random.random() < 0.1
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -2674,7 +2661,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             self.assertTrue(os.path.isfile(fam_filename))
 
             # Checking the ped file content
-            seen_samples = set()
             with open(fam_filename, "r") as i_file:
                 for i, line in enumerate(i_file):
                     # Gathering the information
@@ -2771,7 +2757,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -2946,7 +2931,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     missing = random.random() < 0.1
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -3029,7 +3013,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     missing = random.random() < 0.1
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -3119,7 +3102,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     missing = random.random() < 0.1
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -3203,7 +3185,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     missing = random.random() < 0.1
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
@@ -3339,7 +3320,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             for i in range(10)
         ]
         for filename in beeline_reports:
-            with open(filename, "w") as o_file:
+            with open(filename, "w"):
                 pass
 
         # Not creating a dummy map file
@@ -3675,7 +3656,6 @@ class TestBeelineToolsExtract(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     to_print = [sample_id, marker_id, random.uniform(0, 3),
@@ -3729,7 +3709,6 @@ class TestBeelineToolsExtract(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     to_print = [sample_id, marker_id, random.uniform(0, 3),
@@ -3843,7 +3822,6 @@ class TestBeelineToolsExtract(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     to_print = [sample_id, marker_id, random.uniform(0, 3),
@@ -3898,7 +3876,6 @@ class TestBeelineToolsExtract(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     to_print = [sample_id, marker_id, random.uniform(0, 3),
@@ -4012,7 +3989,6 @@ class TestBeelineToolsExtract(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     to_print = [sample_id, marker_id, random.uniform(0, 3),
@@ -4067,7 +4043,6 @@ class TestBeelineToolsExtract(unittest.TestCase):
                     marker_alleles = alleles[marker_id]
                     a1 = "-" if missing else random.choice(marker_alleles)
                     a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
 
                     # Printing the file
                     to_print = [sample_id, marker_id, random.uniform(0, 3),
@@ -4249,7 +4224,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             for i in range(10)
         ]
         for filename in beeline_reports:
-            with open(filename, "w") as o_file:
+            with open(filename, "w"):
                 pass
 
         # Not creating a dummy map file
