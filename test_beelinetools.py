@@ -4599,8 +4599,183 @@ class TestBeelineToolsExtract(unittest.TestCase):
         )
 
 
-class BaseTestCaseContext_Compatibility:
+class TestBeelineToolsSplit(unittest.TestCase):
+    def setUp(self):
+        """Setup the tests."""
+        self.tmp_dir = mkdtemp(prefix="beelinetools_test_")
 
+    def tearDown(self):
+        """Finishes the tests."""
+        # Cleaning the temporary directory
+        shutil.rmtree(self.tmp_dir)
+
+    def _my_compatibility_assertLogs(self, logger=None, level=None):
+        """Compatibility 'assertLogs' function for Python < 3.4."""
+        if hasattr(self, "assertLogs"):
+            return self.assertLogs(logger, level)
+
+        else:
+            return AssertLogsContext_Compatibility(self, logger, level)
+
+    def test_split_report(self):
+        """Tests the 'split_report' function."""
+        # The number of samples and of markers for this test
+        nb_samples = 3
+        nb_markers = 10
+
+        # The header of the files
+        header = ("Sample ID", "SNP Name", "X", "Y", "Allele1 - Forward",
+                  "Allele2 - Forward", "B Allele Freq", "Log R Ratio")
+
+        # Creating a temporary file
+        tmp_filename = None
+        sample_genotype = defaultdict(dict)
+        sample_row = defaultdict(list)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print(*header, sep=",", file=f)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    sample_genotype[sample_id][marker_id] = genotype
+
+                    # Creating the row
+                    row = (sample_id, marker_id, random.uniform(0, 3),
+                           random.uniform(0, 3), a1, a2, random.random(),
+                           random.uniform(-10, 10))
+                    sample_row[sample_id].append(row)
+
+                    # Printing the file
+                    print(*row, sep=",", file=f,)
+
+        # Creating a temporary file
+        tmp_filename_2 = None
+        sample_genotype_2 = defaultdict(dict)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print(*header, sep=",", file=f)
+            for sample in range(nb_samples):
+                sample_id = "sample_{}".format(sample + nb_samples + 1)
+
+                for marker in range(nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    sample_genotype_2[sample_id][marker_id] = genotype
+
+                    # Creating the row
+                    row = (sample_id, marker_id, random.uniform(0, 3),
+                           random.uniform(0, 3), a1, a2, random.random(),
+                           random.uniform(-10, 10))
+                    sample_row[sample_id].append(row)
+
+                    # Printing the file
+                    print(*row, sep=",", file=f,)
+
+        # Generating mapping information
+        mapping_info = {}
+        for i in range(nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
+            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
+            )
+
+        # Executing the function
+        other_options = _DummyArgs()
+        other_options.beeline_id = "SNP Name"
+        other_options.beeline_sample = "Sample ID"
+        other_options.beeline_a1 = "Allele1 - Forward"
+        other_options.beeline_a2 = "Allele2 - Forward"
+        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.keep_meta = False
+        other_options.add_mapping = False
+        other_options.add_ab = False
+        other_options.o_delim = ","
+        beelinetools.split_report(
+            i_filenames=[tmp_filename, tmp_filename_2],
+            out_dir=self.tmp_dir,
+            locations=mapping_info,
+            other_opts=other_options,
+        )
+
+        # Checking the existence of the three output files (one per sample)
+        for i in range(3):
+            sample = "sample_{}".format(i + 1)
+            fn = os.path.join(self.tmp_dir, sample + ".txt")
+            self.assertTrue(os.path.isfile(fn))
+
+            with open(fn, "r") as f:
+                # Checking the header of the file
+                self.assertEqual(
+                    next(f).rstrip("\r\n"),
+                    ",".join(header),
+                )
+
+                # Checking the content of the file
+                lines = f.read().splitlines()
+                self.assertEqual(len(lines), nb_markers)
+                for exp, obs in zip(sample_row[sample], lines):
+                    self.assertEqual(len(obs.split(",")), len(exp))
+                    self.assertEqual(obs, ",".join(str(c) for c in exp))
+
+
+class BaseTestCaseContext_Compatibility:
     def __init__(self, test_case):
         self.test_case = test_case
 
