@@ -6,5 +6,9 @@ python:
   - "3.5"
 before_install:
   - "pip install -U pip"
-  - "pip install six"
-script: "python test_beelinetools.py"
+install:
+  - "pip install -U six"
+  - "pip install -U pyplink"
+  - "pip install -U coveralls"
+script: "coverage run test_beelinetools.py"
+after_success: "coveralls"

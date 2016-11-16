@@ -3,5 +3,4 @@
 *.pyc
 
 .coverage
-.coveragerc
 htmlcov
