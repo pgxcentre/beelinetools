@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/pgxcentre/beelinetools.svg?branch=master)](https://travis-ci.org/pgxcentre/beelinetools)
+[![Coverage Status](https://coveralls.io/repos/github/pgxcentre/beelinetools/badge.svg?branch=master)](https://coveralls.io/github/pgxcentre/beelinetools?branch=master)
 
 
 # beelinetools - A toolkit to work with Illumina's beeline reports
