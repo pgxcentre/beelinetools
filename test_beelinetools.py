@@ -4675,7 +4675,7 @@ class TestBeelineToolsSplit(unittest.TestCase):
                     sample_row[sample_id].append(row)
 
                     # Printing the file
-                    print(*row, sep=",", file=f,)
+                    print(*row, sep=",", file=f)
 
         # Creating a temporary file
         tmp_filename_2 = None
