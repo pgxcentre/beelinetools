@@ -307,7 +307,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Creating a temporary file
         tmp_filename_2 = None
@@ -354,7 +354,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -507,7 +507,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Creating a temporary file
         tmp_filename_2 = None
@@ -554,7 +554,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -712,7 +712,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
                 # Repeating, but missing a marker
                 for marker in range(nb_markers - 2):
@@ -727,7 +727,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -815,7 +815,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Creating a temporary file
         tmp_filename_2 = None
@@ -862,7 +862,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -1009,7 +1009,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -1092,7 +1092,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -1255,7 +1255,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -1335,7 +1335,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -1422,7 +1422,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -1503,7 +1503,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -2007,7 +2007,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Creating a temporary file
         tmp_filename_2 = None
@@ -2049,7 +2049,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -2231,7 +2231,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Creating a temporary file
         tmp_filename_2 = None
@@ -2273,7 +2273,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -2448,7 +2448,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
                 # Repeating, but missing a marker
                 for marker in range(nb_markers - 2):
@@ -2465,7 +2465,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -2559,7 +2559,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Creating a temporary file
         tmp_filename_2 = None
@@ -2601,7 +2601,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -2761,7 +2761,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
@@ -2853,7 +2853,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Removing a marker in the mapping information
         del mapping_info["marker_3"]
@@ -2935,7 +2935,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -3017,7 +3017,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -3106,7 +3106,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -3189,7 +3189,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f,)
+                          random.uniform(-10, 10), sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -4724,7 +4724,7 @@ class TestBeelineToolsSplit(unittest.TestCase):
                     sample_row[sample_id].append(row)
 
                     # Printing the file
-                    print(*row, sep=",", file=f,)
+                    print(*row, sep=",", file=f)
 
         # Generating mapping information
         mapping_info = {}
