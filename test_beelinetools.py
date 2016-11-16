@@ -4763,7 +4763,7 @@ class TestBeelineToolsSplit(unittest.TestCase):
             with open(fn, "r") as f:
                 # Checking the header of the file
                 self.assertEqual(
-                    next(f).rstrip("\r\n"),
+                    f.readline().rstrip("\r\n"),
                     ",".join(header),
                 )
 
