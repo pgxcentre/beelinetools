@@ -4,7 +4,7 @@
 
 # beelinetools - A toolkit to work with Illumina's beeline reports
 
-*Version 0.2.2*
+*Version 0.3.0*
 
 The `beelinetools` script perform different tasks on Illumina's Beeline final
 report (long format). Such tasks include conversion to the Plink format and
@@ -15,12 +15,6 @@ higher**. It has been developed and tested under Linux operating system, but
 should work on MacOS X and Windows operating systems.
 
 
-## Requirements
-
-The only requirement is the `six` python module, for proper compatibility
-between python 2 and 3.
-
-
 ## Usage
 
 Running the script with with the `-h` or `--help` flag will provide usage
@@ -28,41 +22,47 @@ information.
 
 ```console
 $ beelinetools.py --help
-usage: beelinetools.py [-h] [-v] {convert,extract} ...
+usage: beelinetools.py [-h] [-v] {convert,sample-split,extract} ...
 
-Performs different tasks on Illumina's beeline report(s) (version 0.2.2).
+Performs different tasks on Illumina's beeline report(s) (version 0.3.0).
 
 optional arguments:
-  -h, --help         show this help message and exit
-  -v, --version      show program's version number and exit
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
 
 Analysis Type:
   The type of analysis to be performed on the Beeline (long) report. The
   following list of analysis is available.
 
-  {convert,extract}
-    convert          Converts the Beeline long report to other format.
-    extract          Extract information from the Beeline long report.
+  {convert,sample-split,extract}
+    convert             Converts the Beeline long report to other format.
+    sample-split        Split the report so that there is one file for each
+                        sample.
+    extract             Extract information from the Beeline long report.
 ```
 
-For now, only two analysis types are available: conversion (from Beeline to
+For now, three analysis types are available: conversion (from Beeline to
 Plink) and extraction of data on user defined chromosomes.
 
 
 ### Report conversion
 
-It is possible to convert Illumina's Beeline report to Plink's pedfile for
-downstream analysis. For more information, use the `-h` or `--help` option of
-the `convert` analysis type.
+It is possible to convert Illumina's Beeline report to Plink's pedfile or
+binary for downstream analysis. For more information, use the `-h` or `--help`
+option of the `convert` analysis type.
 
 ```console
 $ beelinetools.py convert --help
 usage: beelinetools.py convert [-h] [-v] -i FILE [FILE ...] -m FILE
-                               [--id-col COL] [--chr-col COL] [--pos-col COL]
-                               [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
+                               [--beeline-id COL] [--beeline-sample COL]
+                               [--beeline-a1 COL] [--beeline-a2 COL]
+                               [--map-id COL] [--map-chr COL] [--map-pos COL]
+                               [--map-allele COL] [--map-delim SEP]
+                               [--nb-snps-kw KEYWORD] [-o DIR]
+                               [--format FORMAT]
 
 Conversion from the Beeline long report format to other, more commonly used,
-format (such as Plink) (version 0.2.2).
+format (such as Plink) (version 0.3.0).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -74,13 +74,24 @@ Input Files:
                         read on the standard input (STDIN).
   -m FILE, --map FILE   The name of the file containing mapping information.
 
+Beeline Options:
+  --beeline-id COL      The name of the column containing the marker
+                        identification number for beeline [SNP Name]
+  --beeline-sample COL  The name of the column containing the sample
+                        identification number for beeline [Sample ID]
+  --beeline-a1 COL      The name of the column containing the first allele for
+                        beeline [Allele1 - Forward]
+  --beeline-a2 COL      The name of the column containing the second allele
+                        for beeline [Allele2 - Forward]
+
 Mapping Options:
-  --id-col COL          The name of the column containing the marker
+  --map-id COL          The name of the column containing the marker
                         identification numbers [Name]
-  --chr-col COL         The name of the column containing the chromosome [Chr]
-  --pos-col COL         The name of the column containing the position
+  --map-chr COL         The name of the column containing the chromosome [Chr]
+  --map-pos COL         The name of the column containing the position
                         [MapInfo]
-  --delim SEP           The field delimiter [,]
+  --map-allele COL      The name of the column containing the alleles [SNP]
+  --map-delim SEP       The field delimiter [,]
   --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
                         for the report(s) (useful if beeline header format
                         changes) [Num Used SNPs]
@@ -88,6 +99,10 @@ Mapping Options:
 Output Directory:
   -o DIR, --output-dir DIR
                         The output directory (default is working directory)
+
+Output Format:
+  --format FORMAT       The output format (one of 'bed' or 'ped' for binary or
+                        normal pedfile format from Plink) [bed].
 ```
 
 
@@ -101,12 +116,15 @@ longer compatible with `beelinetools`. For more information, use the `-h` or
 ```console
 $ beelinetools.py extract --help
 usage: beelinetools.py extract [-h] [-v] -i FILE [FILE ...] -m FILE
-                               [--id-col COL] [--chr-col COL] [--pos-col COL]
-                               [--delim SEP] [--nb-snps-kw KEYWORD] [-o DIR]
+                               [--beeline-id COL] [--beeline-sample COL]
+                               [--beeline-a1 COL] [--beeline-a2 COL]
+                               [--map-id COL] [--map-chr COL] [--map-pos COL]
+                               [--map-allele COL] [--map-delim SEP]
+                               [--nb-snps-kw KEYWORD] [-o DIR]
                                [-c CHROM [CHROM ...]] [-k FILE] [-s STR]
                                [--output-delim SEP]
 
-Extracts information from a Beeline long report (version 0.2.2).
+Extracts information from a Beeline long report (version 0.3.0).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -118,13 +136,24 @@ Input Files:
                         read on the standard input (STDIN).
   -m FILE, --map FILE   The name of the file containing mapping information.
 
+Beeline Options:
+  --beeline-id COL      The name of the column containing the marker
+                        identification number for beeline [SNP Name]
+  --beeline-sample COL  The name of the column containing the sample
+                        identification number for beeline [Sample ID]
+  --beeline-a1 COL      The name of the column containing the first allele for
+                        beeline [Allele1 - Forward]
+  --beeline-a2 COL      The name of the column containing the second allele
+                        for beeline [Allele2 - Forward]
+
 Mapping Options:
-  --id-col COL          The name of the column containing the marker
+  --map-id COL          The name of the column containing the marker
                         identification numbers [Name]
-  --chr-col COL         The name of the column containing the chromosome [Chr]
-  --pos-col COL         The name of the column containing the position
+  --map-chr COL         The name of the column containing the chromosome [Chr]
+  --map-pos COL         The name of the column containing the position
                         [MapInfo]
-  --delim SEP           The field delimiter [,]
+  --map-allele COL      The name of the column containing the alleles [SNP]
+  --map-delim SEP       The field delimiter [,]
   --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
                         for the report(s) (useful if beeline header format
                         changes) [Num Used SNPs]
@@ -147,15 +176,81 @@ Output Options:
 ```
 
 
+### Report extraction
+
+It is possible to split a *beeline* report in one file per sample by using the
+`sample-split` analysis type. For more information, use the `-h` or `--help`
+options.
+
+```console
+$ beelinetools.py sample-split --help
+usage: beelinetools.py sample-split [-h] [-v] -i FILE [FILE ...] -m FILE
+                                    [--beeline-id COL] [--beeline-sample COL]
+                                    [--beeline-a1 COL] [--beeline-a2 COL]
+                                    [--map-id COL] [--map-chr COL]
+                                    [--map-pos COL] [--map-allele COL]
+                                    [--map-delim SEP] [--nb-snps-kw KEYWORD]
+                                    [-o DIR] [--keep-metadata] [--add-ab]
+                                    [--add-mapping] [--output-delim SEP]
+
+The long report will be split so that each sample has its own separate file
+(version 0.3.0)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+
+Input Files:
+  -i FILE [FILE ...], --input FILE [FILE ...]
+                        The name of the input file(s). Use '-' only once to
+                        read on the standard input (STDIN).
+  -m FILE, --map FILE   The name of the file containing mapping information.
+
+Beeline Options:
+  --beeline-id COL      The name of the column containing the marker
+                        identification number for beeline [SNP Name]
+  --beeline-sample COL  The name of the column containing the sample
+                        identification number for beeline [Sample ID]
+  --beeline-a1 COL      The name of the column containing the first allele for
+                        beeline [Allele1 - Forward]
+  --beeline-a2 COL      The name of the column containing the second allele
+                        for beeline [Allele2 - Forward]
+
+Mapping Options:
+  --map-id COL          The name of the column containing the marker
+                        identification numbers [Name]
+  --map-chr COL         The name of the column containing the chromosome [Chr]
+  --map-pos COL         The name of the column containing the position
+                        [MapInfo]
+  --map-allele COL      The name of the column containing the alleles [SNP]
+  --map-delim SEP       The field delimiter [,]
+  --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
+                        for the report(s) (useful if beeline header format
+                        changes) [Num Used SNPs]
+
+Output Directory:
+  -o DIR, --output-dir DIR
+                        The output directory (default is working directory)
+
+Split Options:
+  --keep-metadata       Keeps the meta data ([Header]) in each of the output
+                        reports.
+  --add-ab              Adds the A/B alleles in the output file (sometimes
+                        required by other softwares).
+  --add-mapping         Adds mapping information (chromosome/Position).
+  --output-delim SEP    The output file field delimiter [,]
+```
+
+
 ## Testing
 
 To test the script, perform the following command:
 
 ```console
 $ python test_beelinetools.py 
-...............................
+.......................................................
 ----------------------------------------------------------------------
-Ran 31 tests in 0.024s
+Ran 55 tests in 0.143s
 
 OK
 ```
