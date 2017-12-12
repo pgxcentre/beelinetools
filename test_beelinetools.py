@@ -243,6 +243,113 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         """Setup the tests."""
         self.tmp_dir = mkdtemp(prefix="beelinetools_test_")
 
+        # The number of samples and of markers for this test
+        self.nb_samples = 3
+        self.nb_markers = 10
+
+        # Creating a temporary file
+        self.sample_genotype = defaultdict(dict)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            self.tmp_filename = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(self.nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(self.nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print("Sample ID", "SNP Name", "X", "Y",
+                  "Allele1 - Forward", "Allele2 - Forward",
+                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
+            for sample in range(self.nb_samples):
+                sample_id = "sample_{}".format(sample + 1)
+
+                for marker in range(self.nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    self.sample_genotype[sample][marker_id] = genotype
+
+                    # Printing the file
+                    print(sample_id, marker_id, random.uniform(0, 3),
+                          random.uniform(0, 3), a1, a2, random.random(),
+                          random.uniform(-10, 10), sep=",", file=f)
+
+        # Creating a temporary file
+        self.sample_genotype_2 = defaultdict(dict)
+        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
+                                suffix=".csv") as f:
+            self.tmp_filename_2 = f.name
+
+            # We need a header line
+            print("[Header]", file=f)
+            print("Some information", file=f)
+            print("Num Used Samples,3", file=f)
+            print("Some more information", file=f)
+            print("Num Used SNPs,{}".format(self.nb_markers), file=f)
+            print("Some more information", file=f)
+            print("Some final information", file=f)
+
+            # Needs consistent alleles for 10 markers
+            alleles = {}
+            for marker in range(self.nb_markers):
+                alleles["marker_{}".format(marker + 1)] = tuple(
+                    random.sample(("A", "C", "T", "G"), 2)
+                )
+
+            # We write the data
+            print("[Data]", file=f)
+            print("Sample ID", "SNP Name", "X", "Y",
+                  "Allele1 - Forward", "Allele2 - Forward",
+                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
+            for sample in range(self.nb_samples):
+                sample_id = "sample_{}".format(sample + self.nb_samples + 1)
+
+                for marker in range(self.nb_markers):
+                    marker_id = "marker_{}".format(marker + 1)
+
+                    # Getting the possible alleles
+                    missing = random.random() < 0.1
+                    marker_alleles = alleles[marker_id]
+                    a1 = "-" if missing else random.choice(marker_alleles)
+                    a2 = "-" if missing else random.choice(marker_alleles)
+                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
+                    self.sample_genotype_2[sample][marker_id] = genotype
+
+                    # Printing the file
+                    print(sample_id, marker_id, random.uniform(0, 3),
+                          random.uniform(0, 3), a1, a2, random.random(),
+                          random.uniform(-10, 10), sep=",", file=f)
+
+        # Generating mapping information
+        self.mapping_info = {}
+        for i in range(self.nb_markers):
+            alleles = random.sample(_possible_nuc, 2)
+            marker_name = "marker_{}".format(i + 1)
+            self.mapping_info[marker_name] = beelinetools._Location(
+                chrom=random.randint(1, 26),
+                pos=random.randint(1, 1000000),
+                alleles={alleles[0]: "A", alleles[1]: "B"},
+            )
+
     def tearDown(self):
         """Finishes the tests."""
         # Cleaning the temporary directory
@@ -258,113 +365,14 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped(self):
         """Tests the 'convert_beeline' function."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
-
-        # Creating a temporary file
-        tmp_filename = None
-        sample_genotype = defaultdict(dict)
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-                    sample_genotype[sample_id][marker_id] = genotype
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Creating a temporary file
-        tmp_filename_2 = None
-        sample_genotype_2 = defaultdict(dict)
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename_2 = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + nb_samples + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-                    sample_genotype_2[sample_id][marker_id] = genotype
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+        # Retrieving the values for the test
+        nb_samples = self.nb_samples
+        nb_markers = self.nb_markers
+        tmp_filename = self.tmp_filename
+        tmp_filename_2 = self.tmp_filename_2
+        mapping_info = self.mapping_info
+        sample_genotype = self.sample_genotype
+        sample_genotype_2 = self.sample_genotype_2
 
         # Executing the function
         other_options = _DummyArgs()
@@ -439,7 +447,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     for j, genotype in enumerate(genotypes):
                         marker_id = "marker_{}".format(j + 1)
                         self.assertEqual(
-                            sample_geno[sample_id][marker_id],
+                            sample_geno[i][marker_id],
                             genotype,
                         )
                         seen_markers.add(marker_id)
@@ -456,115 +464,31 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_dup_samples(self):
         """Tests the 'convert_beeline' function with duplicated samples."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        nb_samples = self.nb_samples
+        nb_markers = self.nb_markers
+        tmp_filename = self.tmp_filename
+        tmp_filename_2 = self.tmp_filename_2
+        mapping_info = self.mapping_info
+        sample_genotype = self.sample_genotype
+        sample_genotype_2 = self.sample_genotype_2
 
-        # Creating a temporary file
-        tmp_filename = None
-        sample_genotype = defaultdict(dict)
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
+        # We rename sample_2 to sample_1 in the first file
+        with open(tmp_filename) as f:
+            content = f.read()
+        with open(tmp_filename, "w") as f:
+            f.write(content.replace("sample_2", "sample_1"))
 
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-                if sample_id == "sample_2":
-                    sample_id = "sample_1"
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-                    sample_genotype[sample][marker_id] = genotype
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Creating a temporary file
-        tmp_filename_2 = None
-        sample_genotype_2 = defaultdict(dict)
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename_2 = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-                    sample_genotype_2[sample][marker_id] = genotype
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
+        # We rename  all the samples in the second file
+        with open(tmp_filename_2) as f:
+            content = f.read()
+        for sample in range(self.nb_samples):
+            content = content.replace(
+                "sample_{}".format(sample + self.nb_samples + 1),
+                "sample_{}".format(sample + 1),
             )
+        with open(tmp_filename_2, "w") as f:
+            f.write(content)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -666,78 +590,35 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_dup_samples_error(self):
         """Tests the 'convert_beeline' function with duplicated samples."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        nb_markers = self.nb_markers
+        tmp_filename = self.tmp_filename
+        mapping_info = self.mapping_info
 
-        # Creating a temporary file
-        tmp_filename = None
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
+        # Duplication samples and removing the last two markers of the file
+        marker_to_remove = {
+            "marker_{}".format(i + 1)
+            for i in range(nb_markers - 2, nb_markers)
+        }
+        with open(tmp_filename) as f:
+            content = f.read().splitlines()
+        with open(tmp_filename, "w") as f:
+            sample_1_content = []
+            for line in content:
+                if not line.startswith("sample_"):
+                    print(line, file=f)
+                    continue
 
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
+                sample, marker = line.split(",")[:2]
+                if sample == "sample_1":
+                    sample_1_content.append(line)
+                print(line, file=f)
 
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-                # Repeating, but missing a marker
-                for marker in range(nb_markers - 2):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+            # Duplicating sample_1
+            for line in sample_1_content:
+                marker = line.split(",")[1]
+                if marker not in marker_to_remove:
+                    print(line, file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -766,113 +647,21 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_2(self):
         """Tests the 'convert_beeline' function (different nb SNPs kw)."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        nb_samples = self.nb_samples
+        nb_markers = self.nb_markers
+        tmp_filename = self.tmp_filename
+        tmp_filename_2 = self.tmp_filename_2
+        mapping_info = self.mapping_info
+        sample_genotype = self.sample_genotype
+        sample_genotype_2 = self.sample_genotype_2
 
-        # Creating a temporary file
-        tmp_filename = None
-        sample_genotype = defaultdict(dict)
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-                    sample_genotype[sample_id][marker_id] = genotype
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Creating a temporary file
-        tmp_filename_2 = None
-        sample_genotype_2 = defaultdict(dict)
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename_2 = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + nb_samples + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-                    sample_genotype_2[sample_id][marker_id] = genotype
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+        # Renaming the SNP keyword
+        for fn in (tmp_filename, tmp_filename_2):
+            with open(fn) as f:
+                content = f.read()
+            with open(fn, "w") as f:
+                f.write(content.replace("Num Used SNPs,", "Num SNPs,"))
 
         # Executing the function
         other_options = _DummyArgs()
@@ -947,7 +736,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                     for j, genotype in enumerate(genotypes):
                         marker_id = "marker_{}".format(j + 1)
                         self.assertEqual(
-                            sample_geno[sample_id][marker_id],
+                            sample_geno[i][marker_id],
                             genotype,
                         )
                         seen_markers.add(marker_id)
@@ -964,62 +753,9 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_error_1(self):
         """Tests the 'convert_beeline' function with missing nb markers."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
-
-        # Creating a temporary file
-        tmp_filename = None
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+        # Retrieving the values for the test
+        tmp_filename = self.tmp_filename
+        mapping_info = self.mapping_info
 
         # Executing the function
         other_options = _DummyArgs()
@@ -1027,7 +763,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
         other_options.beeline_sample = "Sample ID"
         other_options.beeline_a1 = "Allele1 - Forward"
         other_options.beeline_a2 = "Allele2 - Forward"
-        other_options.nb_snps_kw = "Num Used SNPs"
+        other_options.nb_snps_kw = "Num SNPs"
         other_options.o_format = "ped"
         with self.assertRaises(beelinetools.ProgramError) as e:
             beelinetools.convert_beeline(
@@ -1037,74 +773,21 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                 other_opts=other_options,
             )
         self.assertEqual(
-            tmp_filename + ": invalid header (missing 'Num Used SNPs' value)",
+            tmp_filename + ": invalid header (missing 'Num SNPs' value)",
             e.exception.message,
         )
 
     def test_convert_beeline_ped_error_2(self):
         """Tests the 'convert_beeline' function with missing marker map."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        nb_samples = self.nb_samples
+        nb_markers = self.nb_markers
+        tmp_filename = self.tmp_filename
+        mapping_info = self.mapping_info
+        sample_genotype = self.sample_genotype
 
-        # Creating a temporary file
-        tmp_filename = None
-        sample_genotype = defaultdict(dict)
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-                    genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
-                    sample_genotype[sample_id][marker_id] = genotype
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            if i + 1 == 3:
-                continue
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+        # Removing mapping information for marker_3
+        del mapping_info["marker_3"]
 
         # Executing the function (should raise a warning)
         other_options = _DummyArgs()
@@ -1189,7 +872,7 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
                 for j, genotype in enumerate(genotypes):
                     marker_id = "marker_{}".format(j + 1)
                     self.assertEqual(
-                        sample_genotype[sample_id][marker_id],
+                        sample_genotype[i][marker_id],
                         genotype,
                     )
                     seen_markers.add(marker_id)
@@ -1209,63 +892,19 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_error_3(self):
         """Tests the 'convert_beeline' function (wrong nb of markers)."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        nb_markers = self.nb_markers
+        tmp_filename = self.tmp_filename
+        mapping_info = self.mapping_info
 
-        # Creating a temporary file
-        tmp_filename = None
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers + 1), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+        # Changing the number of markers in the file
+        with open(tmp_filename) as f:
+            content = f.read()
+        with open(tmp_filename, "w") as f:
+            f.write(content.replace(
+                "Num Used SNPs,{}".format(nb_markers),
+                "Num Used SNPs,{}".format(nb_markers + 1),
+            ))
 
         # Executing the function
         other_options = _DummyArgs()
@@ -1289,63 +928,21 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_error_4(self):
         """Tests the 'convert_beeline' function (missing column)."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        tmp_filename = self.tmp_filename
+        mapping_info = self.mapping_info
 
-        # Creating a temporary file
-        tmp_filename = None
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "B Allele Freq", "Log R Ratio", sep=",",
-                  file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+        # Removing a column
+        with open(tmp_filename) as f:
+            content = f.read().splitlines()
+        with open(tmp_filename, "w") as f:
+            for line in content:
+                if not line.startswith("Sample ID"):
+                    print(line, file=f)
+                else:
+                    print("Sample ID", "SNP Name", "X", "Y",
+                          "Allele1 - Forward", "B Allele Freq", "Log R Ratio",
+                          sep=",", file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -1369,70 +966,18 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_error_5(self):
         """Tests the 'convert_beeline' function (invalid order)."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        tmp_filename = self.tmp_filename
+        mapping_info = self.mapping_info
 
-        # Creating a temporary file
-        tmp_filename = None
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
-
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for sample in range(nb_samples):
-                sample_id = "sample_{}".format(sample + 1)
-
-                for marker in range(nb_markers):
-                    marker_id = "marker_{}".format(marker + 1)
-
-                    # We want to switch markers for sample 2
-                    if sample_id == "sample_2":
-                        if marker_id == "marker_3":
-                            marker_id = "marker_4"
-                        elif marker_id == "marker_4":
-                            marker_id = "marker_3"
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+        # Changing order of sample_2 (marker_3 <=> marker_4)
+        with open(tmp_filename) as f:
+            content = f.read()
+        content = content.replace("sample_2,marker_3", "sample_2,tmarker_4")
+        content = content.replace("sample_2,marker_4", "sample_2,marker_3")
+        content = content.replace("sample_2,tmarker_4", "sample_2,marker_4")
+        with open(tmp_filename, "w") as f:
+            f.write(content)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -1457,63 +1002,24 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
 
     def test_convert_beeline_ped_error_6(self):
         """Tests the 'convert_beeline' function (invalid sorting)."""
-        # The number of samples and of markers for this test
-        nb_samples = 3
-        nb_markers = 10
+        # Retrieving the values for the test
+        tmp_filename = self.tmp_filename
+        mapping_info = self.mapping_info
 
-        # Creating a temporary file
-        tmp_filename = None
-        with NamedTemporaryFile("w", dir=self.tmp_dir, delete=False,
-                                suffix=".csv") as f:
-            tmp_filename = f.name
+        # Reordering files
+        with open(tmp_filename) as f:
+            content = f.read().splitlines()
+        with open(tmp_filename, "w") as f:
+            for i, line in enumerate(content):
+                print(line, file=f)
+                if line.startswith("Sample ID"):
+                    data_start = i + 1
+                    break
 
-            # We need a header line
-            print("[Header]", file=f)
-            print("Some information", file=f)
-            print("Num Used Samples,3", file=f)
-            print("Some more information", file=f)
-            print("Num Used SNPs,{}".format(nb_markers), file=f)
-            print("Some more information", file=f)
-            print("Some final information", file=f)
-
-            # Needs consistent alleles for 10 markers
-            alleles = {}
-            for marker in range(nb_markers):
-                alleles["marker_{}".format(marker + 1)] = tuple(
-                    random.sample(("A", "C", "T", "G"), 2)
-                )
-
-            # We write the data
-            print("[Data]", file=f)
-            print("Sample ID", "SNP Name", "X", "Y",
-                  "Allele1 - Forward", "Allele2 - Forward",
-                  "B Allele Freq", "Log R Ratio", sep=",", file=f)
-            for marker in range(nb_markers):
-                marker_id = "marker_{}".format(marker + 1)
-
-                for sample in range(nb_samples):
-                    sample_id = "sample_{}".format(sample + 1)
-
-                    # Getting the possible alleles
-                    missing = random.random() < 0.1
-                    marker_alleles = alleles[marker_id]
-                    a1 = "-" if missing else random.choice(marker_alleles)
-                    a2 = "-" if missing else random.choice(marker_alleles)
-
-                    # Printing the file
-                    print(sample_id, marker_id, random.uniform(0, 3),
-                          random.uniform(0, 3), a1, a2, random.random(),
-                          random.uniform(-10, 10), sep=",", file=f)
-
-        # Generating mapping information
-        mapping_info = {}
-        for i in range(nb_markers):
-            alleles = random.sample(_possible_nuc, 2)
-            mapping_info["marker_{}".format(i + 1)] = beelinetools._Location(
-                chrom=random.randint(1, 26),
-                pos=random.randint(1, 1000000),
-                alleles={alleles[0]: "A", alleles[1]: "B"},
-            )
+            # Changing the order
+            content = content[data_start:]
+            content.sort(key=lambda x: x.split(",")[1])
+            print("\n".join(content), file=f)
 
         # Executing the function
         other_options = _DummyArgs()
@@ -1952,6 +1458,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # The mapping info
         mapping_info = {}
+        minor_major_info = ({}, {})
 
         # Creating a temporary file
         tmp_filename = None
@@ -2004,6 +1511,23 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                     sample_genotype[sample_id][marker_id] = genotype
 
+                    # Set here (for minor/major allele)
+                    # The first seen is considered the A (major) allele
+                    if marker_id not in minor_major_info[0]:
+                        minor_major_info[0][marker_id] = {}
+                    if a1 not in minor_major_info[0][marker_id]:
+                        if a1 != "-":
+                            if len(minor_major_info[0][marker_id]) == 0:
+                                minor_major_info[0][marker_id][a1] = "A"
+                            else:
+                                minor_major_info[0][marker_id][a1] = "B"
+                    if a2 not in minor_major_info[0][marker_id]:
+                        if a2 != "-":
+                            if len(minor_major_info[0][marker_id]) == 0:
+                                minor_major_info[0][marker_id][a2] = "A"
+                            else:
+                                minor_major_info[0][marker_id][a2] = "B"
+
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
@@ -2046,6 +1570,23 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                     sample_genotype_2[sample_id][marker_id] = genotype
 
+                    # Set here (for minor/major allele)
+                    # The first seen is considered the A (major) allele
+                    if marker_id not in minor_major_info[1]:
+                        minor_major_info[1][marker_id] = {}
+                    if a1 not in minor_major_info[1][marker_id]:
+                        if a1 != "-":
+                            if len(minor_major_info[1][marker_id]) == 0:
+                                minor_major_info[1][marker_id][a1] = "A"
+                            else:
+                                minor_major_info[1][marker_id][a1] = "B"
+                    if a2 not in minor_major_info[1][marker_id]:
+                        if a2 != "-":
+                            if len(minor_major_info[1][marker_id]) == 0:
+                                minor_major_info[1][marker_id][a2] = "A"
+                            else:
+                                minor_major_info[1][marker_id][a2] = "B"
+
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
@@ -2067,7 +1608,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         )
 
         # Checking the two BIM files
-        for bim_filename in (tmp_filename, tmp_filename_2):
+        for file_n, bim_filename in enumerate((tmp_filename, tmp_filename_2)):
             bim_filename = os.path.splitext(bim_filename)[0] + ".bim"
             self.assertTrue(os.path.isfile(bim_filename))
 
@@ -2082,7 +1623,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Getting the A/B alleles
                     alleles = {
                         ab_allele: allele for allele, ab_allele in
-                        mapping_info[marker].alleles.items()
+                        minor_major_info[file_n][marker].items()
                     }
 
                     # Comparing the content of the file
@@ -2092,7 +1633,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual(marker, row[1])
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
-                    self.assertEqual(alleles["B"], row[4])
+                    self.assertEqual(alleles.get("B", "0"), row[4])
                     self.assertEqual(alleles["A"], row[5])
 
                     # We have compared this marker
@@ -2174,6 +1715,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # The mapping info
         mapping_info = {}
+        minor_major_info = ({}, {})
 
         # Creating a temporary file
         tmp_filename = None
@@ -2228,6 +1770,23 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                     sample_genotype[sample][marker_id] = genotype
 
+                    # Set here (for minor/major allele)
+                    # The first seen is considered the A (major) allele
+                    if marker_id not in minor_major_info[0]:
+                        minor_major_info[0][marker_id] = {}
+                    if a1 not in minor_major_info[0][marker_id]:
+                        if a1 != "-":
+                            if len(minor_major_info[0][marker_id]) == 0:
+                                minor_major_info[0][marker_id][a1] = "A"
+                            else:
+                                minor_major_info[0][marker_id][a1] = "B"
+                    if a2 not in minor_major_info[0][marker_id]:
+                        if a2 != "-":
+                            if len(minor_major_info[0][marker_id]) == 0:
+                                minor_major_info[0][marker_id][a2] = "A"
+                            else:
+                                minor_major_info[0][marker_id][a2] = "B"
+
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
@@ -2270,6 +1829,23 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                     sample_genotype_2[sample][marker_id] = genotype
 
+                    # Set here (for minor/major allele)
+                    # The first seen is considered the A (major) allele
+                    if marker_id not in minor_major_info[1]:
+                        minor_major_info[1][marker_id] = {}
+                    if a1 not in minor_major_info[1][marker_id]:
+                        if a1 != "-":
+                            if len(minor_major_info[1][marker_id]) == 0:
+                                minor_major_info[1][marker_id][a1] = "A"
+                            else:
+                                minor_major_info[1][marker_id][a1] = "B"
+                    if a2 not in minor_major_info[1][marker_id]:
+                        if a2 != "-":
+                            if len(minor_major_info[1][marker_id]) == 0:
+                                minor_major_info[1][marker_id][a2] = "A"
+                            else:
+                                minor_major_info[1][marker_id][a2] = "B"
+
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
@@ -2298,7 +1874,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         )
 
         # Checking the two BIM files
-        for bim_filename in (tmp_filename, tmp_filename_2):
+        for file_n, bim_filename in enumerate((tmp_filename, tmp_filename_2)):
             bim_filename = os.path.splitext(bim_filename)[0] + ".bim"
             self.assertTrue(os.path.isfile(bim_filename))
 
@@ -2313,7 +1889,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Getting the A/B alleles
                     alleles = {
                         ab_allele: allele for allele, ab_allele in
-                        mapping_info[marker].alleles.items()
+                        minor_major_info[file_n][marker].items()
                     }
 
                     # Comparing the content of the file
@@ -2323,7 +1899,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual(marker, row[1])
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
-                    self.assertEqual(alleles["B"], row[4])
+                    self.assertEqual(alleles.get("B", "0"), row[4])
                     self.assertEqual(alleles["A"], row[5])
 
                     # We have compared this marker
@@ -2504,6 +2080,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
         # The mapping info
         mapping_info = {}
+        minor_major_info = ({}, {})
 
         # Creating a temporary file
         tmp_filename = None
@@ -2556,6 +2133,23 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                     sample_genotype[sample_id][marker_id] = genotype
 
+                    # Set here (for minor/major allele)
+                    # The first seen is considered the A (major) allele
+                    if marker_id not in minor_major_info[0]:
+                        minor_major_info[0][marker_id] = {}
+                    if a1 not in minor_major_info[0][marker_id]:
+                        if a1 != "-":
+                            if len(minor_major_info[0][marker_id]) == 0:
+                                minor_major_info[0][marker_id][a1] = "A"
+                            else:
+                                minor_major_info[0][marker_id][a1] = "B"
+                    if a2 not in minor_major_info[0][marker_id]:
+                        if a2 != "-":
+                            if len(minor_major_info[0][marker_id]) == 0:
+                                minor_major_info[0][marker_id][a2] = "A"
+                            else:
+                                minor_major_info[0][marker_id][a2] = "B"
+
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
@@ -2598,6 +2192,23 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                     sample_genotype_2[sample_id][marker_id] = genotype
 
+                    # Set here (for minor/major allele)
+                    # The first seen is considered the A (major) allele
+                    if marker_id not in minor_major_info[1]:
+                        minor_major_info[1][marker_id] = {}
+                    if a1 not in minor_major_info[1][marker_id]:
+                        if a1 != "-":
+                            if len(minor_major_info[1][marker_id]) == 0:
+                                minor_major_info[1][marker_id][a1] = "A"
+                            else:
+                                minor_major_info[1][marker_id][a1] = "B"
+                    if a2 not in minor_major_info[1][marker_id]:
+                        if a2 != "-":
+                            if len(minor_major_info[1][marker_id]) == 0:
+                                minor_major_info[1][marker_id][a2] = "A"
+                            else:
+                                minor_major_info[1][marker_id][a2] = "B"
+
                     # Printing the file
                     print(sample_id, marker_id, random.uniform(0, 3),
                           random.uniform(0, 3), a1, a2, random.random(),
@@ -2619,7 +2230,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         )
 
         # Checking the two BIM files
-        for bim_filename in (tmp_filename, tmp_filename_2):
+        for file_n, bim_filename in enumerate((tmp_filename, tmp_filename_2)):
             bim_filename = os.path.splitext(bim_filename)[0] + ".bim"
             self.assertTrue(os.path.isfile(bim_filename))
 
@@ -2634,7 +2245,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Getting the A/B alleles
                     alleles = {
                         ab_allele: allele for allele, ab_allele in
-                        mapping_info[marker].alleles.items()
+                        minor_major_info[file_n][marker].items()
                     }
 
                     # Comparing the content of the file
@@ -2644,7 +2255,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual(marker, row[1])
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
-                    self.assertEqual(alleles["B"], row[4])
+                    self.assertEqual(alleles.get("B", "0"), row[4])
                     self.assertEqual(alleles["A"], row[5])
 
                     # We have compared this marker

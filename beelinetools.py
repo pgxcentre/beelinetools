@@ -221,6 +221,9 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
             line = i_file.readline()
             row = line.rstrip("\r\n").split(",")
 
+            # Allele of each markers
+            marker_alleles = {}
+
             while line != "":
                 # Getting the marker name and sample id
                 sample = row[header[other_opts.beeline_sample]]
@@ -267,10 +270,36 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                             raise ProgramError(
                                 "{}: no mapping information".format(marker)
                             )
+
+                        # Is this the first time we have seen this marker?
+                        if marker not in marker_alleles:
+                            marker_alleles[marker] = {}
+
+                        # Adding the first allele, if required
+                        if allele_1 not in marker_alleles[marker]:
+                            if allele_1 != "-":
+                                if len(marker_alleles[marker]) == 0:
+                                    marker_alleles[marker][allele_1] = "A"
+                                else:
+                                    marker_alleles[marker][allele_1] = "B"
+
+                        # Adding the second allele, if required
+                        if allele_2 not in marker_alleles[marker]:
+                            if allele_2 != "-":
+                                if len(marker_alleles[marker]) == 0:
+                                    marker_alleles[marker][allele_2] = "A"
+                                else:
+                                    marker_alleles[marker][allele_2] = "B"
+
+                        # Sanity check
+                        if len(marker_alleles[marker]) > 2:
+                            raise ProgramError(
+                                "{}: more than two alleles".format(marker)
+                            )
+
+                        # Computing the genotypes
                         genotypes[current_marker_i] = encode_genotype(
-                            allele_1,
-                            allele_2,
-                            locations[marker].alleles,
+                            allele_1, allele_2, marker_alleles[marker],
                         )
 
                     # Increasing the current marker
@@ -330,8 +359,12 @@ def convert_beeline(i_filenames, out_dir, locations, other_opts):
                           marker_location.pos, sep="\t", file=mapfile)
                 else:
                     alleles = {
-                        v: k for k, v in marker_location.alleles.items()
+                        v: k for k, v in marker_alleles[marker].items()
                     }
+                    if "A" not in alleles:
+                        alleles["A"] = "0"
+                    if "B" not in alleles:
+                        alleles["B"] = "0"
                     print(marker_location.chrom, marker, "0",
                           marker_location.pos, alleles["B"], alleles["A"],
                           sep="\t", file=bimfile)
