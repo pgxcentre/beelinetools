@@ -5,10 +5,11 @@ python:
   - "3.4"
   - "3.5"
 before_install:
-  - "pip install -U pip"
+  - pip install -U pip
 install:
-  - "pip install -U six"
-  - "pip install -U pyplink"
-  - "pip install -U coveralls"
-script: "coverage run test_beelinetools.py"
-after_success: "coveralls"
+  - pip install -U six
+  - if [ "$TRAVIS_PYTHON_VERSION" == "3.3" ]; then pip install numpy==1.11; fi
+  - pip install pyplink
+  - pip install -U coveralls
+script: coverage run test_beelinetools.py
+after_success: coveralls
