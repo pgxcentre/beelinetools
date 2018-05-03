@@ -813,12 +813,19 @@ def need_complement(strand, strand_type):
 
     """
     if strand_type == "forward":
-        return _forward_strand_re.search(strand).group(1) == "R"
+        value = _forward_strand_re.search(strand)
+        if value is None:
+            raise ValueError("{}: invalid forward value".format(strand))
+        return value.group(1) == "R"
 
     elif strand_type == "plus":
+        if strand != "+" and strand != "-":
+            raise ValueError("{}: invalid plus value".format(strand))
         return strand == "-"
 
     elif strand_type == "top":
+        if strand != "TOP" and strand != "BOT":
+            raise ValueError("{}: invalid top value".format(strand))
         return strand == "BOT"
 
     else:
