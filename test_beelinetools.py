@@ -287,6 +287,234 @@ class TestBeelineTools(unittest.TestCase):
             beelinetools.need_complement("foo", "foo")
         self.assertEqual("foo: invalid strand", str(e.exception))
 
+    def test_check_args_strand_forward(self):
+        """Tests the 'check_args' for strand 'forward' logic."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating the namespace for the function
+        args = Namespace(
+            i_filenames=beeline_reports,
+            map_filename=map_filename,
+            map_delim=",",
+            map_id="Name",
+            map_chr="Chr",
+            map_pos="MapInfo",
+            map_allele="SNP",
+            output_dir=self.tmp_dir,
+            nb_snps_kw="Num Used SNPs",
+            analysis_type="extract",
+            samples_to_keep=None,
+            chrom=["1", "2", "X"],
+            beeline_strand=None,
+            beeline_a1="Allele1 - Forward",
+            beeline_a2="Allele2 - Forward",
+            map_illumina_id="IlmnID",
+            map_illumina_strand="IlmnStrand",
+            map_ref_strand="RefStrand",
+        )
+
+        # Checking
+        beelinetools.check_args(args)
+        self.assertEqual("forward", args.beeline_strand)
+
+    def test_check_args_strand_top(self):
+        """Tests the 'check_args' for strand 'top' logic."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating the namespace for the function
+        args = Namespace(
+            i_filenames=beeline_reports,
+            map_filename=map_filename,
+            map_delim=",",
+            map_id="Name",
+            map_chr="Chr",
+            map_pos="MapInfo",
+            map_allele="SNP",
+            output_dir=self.tmp_dir,
+            nb_snps_kw="Num Used SNPs",
+            analysis_type="extract",
+            samples_to_keep=None,
+            chrom=["1", "2", "X"],
+            beeline_strand=None,
+            beeline_a1="Allele1 - Top",
+            beeline_a2="Allele2 - Top",
+            map_illumina_id="IlmnID",
+            map_illumina_strand="IlmnStrand",
+            map_ref_strand="RefStrand",
+        )
+
+        # Checking
+        beelinetools.check_args(args)
+        self.assertEqual("top", args.beeline_strand)
+
+    def test_check_args_strand_plus(self):
+        """Tests the 'check_args' for strand 'plus' logic."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating the namespace for the function
+        args = Namespace(
+            i_filenames=beeline_reports,
+            map_filename=map_filename,
+            map_delim=",",
+            map_id="Name",
+            map_chr="Chr",
+            map_pos="MapInfo",
+            map_allele="SNP",
+            output_dir=self.tmp_dir,
+            nb_snps_kw="Num Used SNPs",
+            analysis_type="extract",
+            samples_to_keep=None,
+            chrom=["1", "2", "X"],
+            beeline_strand=None,
+            beeline_a1="Allele1 - Plus",
+            beeline_a2="Allele2 - Plus",
+            map_illumina_id="IlmnID",
+            map_illumina_strand="IlmnStrand",
+            map_ref_strand="RefStrand",
+        )
+
+        # Checking
+        beelinetools.check_args(args)
+        self.assertEqual("plus", args.beeline_strand)
+
+    def test_check_args_strand_invalid(self):
+        """Tests the 'check_args' for strand 'invalid' logic."""
+        # Creating dummy Beeline reports
+        beeline_reports = [
+            os.path.join(self.tmp_dir, "file_{}.csv".format(i + 1))
+            for i in range(10)
+        ]
+        for filename in beeline_reports:
+            with open(filename, "w") as o_file:
+                pass
+
+        # Creating a dummy map file
+        map_filename = os.path.join(self.tmp_dir, "map_file.csv")
+        with open(map_filename, "w") as o_file:
+            print(
+                "Illumina, Inc.\n"
+                "[Heading]\n"
+                "Descriptor File Name,HumanOmni25Exome-8v1-1_A.bpm\n"
+                "Assay Format,Infinium LCG\n"
+                "Date Manufactured,4/22/2014\n"
+                "Loci Count ,2583651\n"
+                "[Assay]\n"
+                "IlmnID,Name,IlmnStrand,SNP,AddressA_ID,AlleleA_ProbeSeq,"
+                "AddressB_ID,AlleleB_ProbeSeq,GenomeBuild,Chr,MapInfo,Ploidy,"
+                "Species,Source,SourceVersion,SourceStrand,SourceSeq,"
+                "TopGenomicSeq,BeadSetID,Exp_Clusters,RefStrand\n"
+                "Dummy_data",
+                file=o_file,
+            )
+
+        # Creating the namespace for the function
+        args = Namespace(
+            i_filenames=beeline_reports,
+            map_filename=map_filename,
+            map_delim=",",
+            map_id="Name",
+            map_chr="Chr",
+            map_pos="MapInfo",
+            map_allele="SNP",
+            output_dir=self.tmp_dir,
+            nb_snps_kw="Num Used SNPs",
+            analysis_type="extract",
+            samples_to_keep=None,
+            chrom=["1", "2", "X"],
+            beeline_strand=None,
+            beeline_a1="Allele1 - Plus",
+            beeline_a2="Allele2 - Forward",
+            map_illumina_id="IlmnID",
+            map_illumina_strand="IlmnStrand",
+            map_ref_strand="RefStrand",
+        )
+
+        # Checking
+        with self.assertRaises(beelinetools.ProgramError) as e:
+            beelinetools.check_args(args)
+        self.assertEqual(
+            "Impossible to infer the allele strand from the column names",
+            e.exception.message,
+        )
+
 
 class TestBeelineToolsConvertPED(unittest.TestCase):
     def setUp(self):
