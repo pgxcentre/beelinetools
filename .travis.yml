@@ -1,15 +1,17 @@
 language: python
 python:
   - "2.7"
-  - "3.3"
   - "3.4"
   - "3.5"
+  - "3.6"
 before_install:
   - pip install -U pip
+  - pip install -U setuptools
 install:
   - pip install -U six
-  - if [ "$TRAVIS_PYTHON_VERSION" == "3.3" ]; then pip install numpy==1.11; fi
-  - pip install pyplink
+  - pip install -U numpy
+  - pip install -U pandas $(if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then echo "--no-build-isolation"; fi)
+  - pip install -U pyplink
   - pip install -U coveralls
 script: coverage run test_beelinetools.py
 after_success: coveralls
