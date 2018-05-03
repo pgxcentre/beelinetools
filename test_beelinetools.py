@@ -147,18 +147,28 @@ class TestBeelineTools(unittest.TestCase):
             tmp_filename = f.name
             print(*range(6), sep="\n", file=f)
             print("[Assay]", file=f)
-            print("Name,Chr,MapInfo,SNP", file=f)
+            print("Name,Chr,MapInfo,SNP,Strand", file=f)
             for i in range(100):
                 marker_name = "marker_{}".format(i + 1)
                 chrom = random.randint(1, 26)
                 pos = random.randint(1, 3000000)
                 alleles = random.sample(_possible_nuc, 2)
                 snp = "[{}]".format("/".join(alleles))
-                print(marker_name, chrom, pos, snp, sep=",", file=f)
+                strand = random.choice(("TOP", "BOT"))
+
+                # Printing the mapping information
+                print(marker_name, chrom, pos, snp, strand, sep=",", file=f)
+
+                # The expected alleles
+                a1 = alleles[0]
+                a2 = alleles[1]
+                if strand == "BOT":
+                    a1 = beelinetools._complement[a1]
+                    a2 = beelinetools._complement[a2]
+
+                # The expected data
                 expected[marker_name] = beelinetools._Location(
-                    chrom=chrom,
-                    pos=pos,
-                    alleles={alleles[0]: "A", alleles[1]: "B"},
+                    chrom=chrom, pos=pos, alleles={a1: "A", a2: "B"},
                 )
 
         # Getting the expected data
@@ -169,12 +179,14 @@ class TestBeelineTools(unittest.TestCase):
             map_chr="Chr",
             map_pos="MapInfo",
             map_allele="SNP",
+            allele_strand="top",
+            strand_col="Strand",
         )
         self.assertEqual(expected, observed)
 
         # Adding a '[Controls]' line, everything below should be excluded
         with open(tmp_filename, "a") as o_file:
-            print("added_marker,1,1,[A/G]", file=o_file)
+            print("added_marker,1,1,[A/G],TOP", file=o_file)
             print("[Controls],,,", file=o_file)
             print("skipped_line", file=o_file)
         expected["added_marker"] = beelinetools._Location(
@@ -191,6 +203,8 @@ class TestBeelineTools(unittest.TestCase):
             map_chr="Chr",
             map_pos="MapInfo",
             map_allele="SNP",
+            allele_strand="top",
+            strand_col="Strand",
         )
         self.assertEqual(expected, observed)
 
@@ -1010,6 +1024,8 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             analysis_type="convert",
             map_allele="SNP",
             o_format="ped",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -1058,6 +1074,8 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="ped",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -1095,6 +1113,8 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="ped",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -1149,6 +1169,8 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="ped",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -1202,6 +1224,8 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="ped",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -1258,6 +1282,8 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="ped",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -1319,6 +1345,8 @@ class TestBeelineToolsConvertPED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="ped",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -1408,6 +1436,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -1563,6 +1592,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -1719,6 +1749,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -1770,6 +1801,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -1927,6 +1959,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function (should raise a warning)
@@ -1963,6 +1996,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -2004,6 +2038,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -2042,6 +2077,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -2087,6 +2123,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             beeline_a2="Allele2 - Forward",
             nb_snps_kw="Num Used SNPs",
             o_format="bed",
+            beeline_strand="top",
         )
 
         # Executing the function
@@ -2146,6 +2183,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             analysis_type="convert",
             map_allele="SNP",
             o_format="bed",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -2194,6 +2233,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="bed",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -2231,6 +2272,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="bed",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -2285,6 +2328,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="bed",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -2338,6 +2383,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="bed",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -2394,6 +2441,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="bed",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -2455,6 +2504,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
             nb_snps_kw="Num Used SNPs",
             analysis_type="convert",
             o_format="bed",
+            beeline_strand="top",
+            map_illumina_strand="IlmnStrand",
         )
 
         # Executing the function
@@ -2740,6 +2791,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["1", "2", "X"],
+            beeline_strand="TOP",
         )
 
         # Executing the function
@@ -2802,6 +2854,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["12", "3"],
+            beeline_strand="TOP",
         )
 
         # Executing the function
@@ -2840,6 +2893,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["22", "X"],
+            beeline_strand="TOP",
         )
 
         # Executing the function
@@ -2895,6 +2949,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["Y"],
+            beeline_strand="TOP",
         )
 
         # Executing the function
@@ -2949,6 +3004,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["Y"],
+            beeline_strand="TOP",
         )
 
         # Executing the function
@@ -3006,6 +3062,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["3"],
+            beeline_strand="TOP",
         )
 
         # Executing the function
@@ -3068,6 +3125,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["4"],
+            beeline_strand="TOP",
         )
 
         # Executing the function
@@ -3136,6 +3194,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep=None,
             chrom=["1", "Y", "Z", "2"],
+            beeline_strand="TOP",
         )
 
         # Checking the arguments
@@ -3195,6 +3254,7 @@ class TestBeelineToolsExtract(unittest.TestCase):
             analysis_type="extract",
             samples_to_keep="dummy_file_that_does_not_exist",
             chrom=["1", "Y", "2"],
+            beeline_strand="TOP",
         )
 
         # Checking the arguments
