@@ -34,10 +34,15 @@ __version__ = "0.3.0"
 _Location = namedtuple("Location", ["chrom", "pos", "alleles"])
 _unknown_location = _Location(chrom=0, pos=0, alleles={})
 
+# The complement (including special alleles)
+_complement = {"A": "T", "T": "A", "C": "G", "G": "C",
+               "-": "-", "D": "D", "I": "I"}
 
-# The complement
-_complement = {"A": "T", "T": "A", "C": "G", "G": "C", "-": "-"}
+# The AB encoding
 _geno_add_encoding = {"AA": 0, "AB": 1, "BA": 1, "BB": 2}
+
+# The forward/reverse strand formatter
+_forward_strand_re = re.compile(r"_[TBPM]_([RF])_")
 
 
 def main():
@@ -57,16 +62,28 @@ def main():
     try:
         # Parsing and checking the options and arguments
         args = parse_args(parser)
+        logging.info("Version {}".format(__version__))
         check_args(args)
+
+        # Getting the strand column
+        strand_column = None
+        if args.beeline_strand == "forward":
+            strand_column = args.map_illumina_id
+        elif args.beeline_strand == "plus":
+            strand_column = args.map_ref_strand
+        elif args.beeline_strand == "top":
+            strand_column = args.map_illumina_strand
 
         # Reading the map file
         map_data = read_mapping_info(
-            args.map_filename,
+            i_filename=args.map_filename,
             delim=args.map_delim,
             map_id=args.map_id,
             map_chr=args.map_chr,
             map_pos=args.map_pos,
             map_allele=args.map_allele,
+            allele_strand=args.beeline_strand,
+            strand_col=strand_column,
         )
 
         if args.analysis_type == "convert":
@@ -718,7 +735,8 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
         ))
 
 
-def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele):
+def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele,
+                      allele_strand, strand_col):
     """Reads the mapping information to gather genomic locations.
 
     Args:
@@ -728,12 +746,17 @@ def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele):
         map_chr (str): the name of the column containing the chromosome
         map_pos (str): the name of the column containing the position
         map_allele (str): the name of the column containing the alleles
+        allele_strand (str): the strand of the alleles in the beeline file
+        strand_col (str): the name of the column containing the stand info
 
     Returns:
         dict: a dictionary from marker ID to genomic location
 
     """
     logging.info("Reading mapping information")
+    logging.info("  - marker strand is '{}'".format(allele_strand))
+    logging.info("  - strand information is '{}'".format(strand_col))
+
     map_info = {}
     with open(i_filename, "r") as i_file:
         # Reading until the header
@@ -751,10 +774,21 @@ def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele):
             chrom = encode_chromosome(row[header[map_chr]])
             pos = int(row[header[map_pos]])
 
+            # Checking if we need to complement the alleles or not
+            # Getting the strand information
+            complement_required = need_complement(
+                row[header[strand_col]], allele_strand,
+            )
+
             # Splitting the alleles
             alleles = row[header[map_allele]].split("/")
             a_allele = alleles[0][1:]
             b_allele = alleles[1][:-1]
+
+            # Complementing if required
+            if complement_required:
+                a_allele = _complement[a_allele]
+                b_allele = _complement[b_allele]
 
             # Saving the information
             map_info[name] = _Location(
@@ -765,6 +799,30 @@ def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele):
 
     logging.info("  - {:,d} markers".format(len(map_info)))
     return map_info
+
+
+def need_complement(strand, strand_type):
+    """Checks if complementing the alleles is required.
+
+    Args:
+        strand (str): the strand value
+        strand_type (str): the strand type (forward, top, plus)
+
+    Returns:
+        bool: needs complement or not
+
+    """
+    if strand_type == "forward":
+        return _forward_strand_re.search(strand).group(1) == "R"
+
+    elif strand_type == "plus":
+        return strand == "-"
+
+    elif strand_type == "top":
+        return strand == "BOT"
+
+    else:
+        raise ValueError("{}: invalid strand".format(strand_type))
 
 
 def read_list(i_filename):
@@ -869,12 +927,11 @@ def encode_allele(allele, encoding):
         is found in the encoding, then "-" is returned.
 
     """
-    encoded_allele = encoding.get(allele, "-")
+    if allele == "-":
+        return allele
 
-    if encoded_allele == "-":
-        encoded_allele = encoding.get(_complement[allele], "-")
-
-    return encoded_allele
+    else:
+        return encoding[allele]
 
 
 def check_args(args):
@@ -909,6 +966,22 @@ def check_args(args):
                     "{}: GZIP not yet implemented (use '-')".format(filename)
                 )
 
+    # Checking the strand of the alleles
+    if args.beeline_strand is None:
+        a1 = args.beeline_a1.lower()
+        a2 = args.beeline_a2.lower()
+        if "forward" in a1 and "forward" in a2:
+            args.beeline_strand = "forward"
+        elif "top" in a1 and "top" in a2:
+            args.beeline_strand = "top"
+        elif "plus" in a1 and "plus" in a2:
+            args.beeline_strand = "plus"
+        else:
+            raise ProgramError("Impossible to infer the allele strand from "
+                               "the column names")
+        logging.info("Inferred that the allele strand is '{}'"
+                     "".format(args.beeline_strand))
+
     # Checking the map file
     if not os.path.isfile(args.map_filename):
         raise ProgramError("{}: no such file".format(args.map_filename))
@@ -918,12 +991,21 @@ def check_args(args):
         # Reading the header
         header = get_header(i_file, args.map_delim, "[Assay]")
 
+        # The required columns
+        required_columns = [args.map_id, args.map_chr, args.map_pos,
+                            args.map_allele]
+        if args.beeline_strand == "forward":
+            required_columns.append(args.map_illumina_id)
+        elif args.beeline_strand == "top":
+            required_columns.append(args.map_illumina_strand)
+        elif args.beeline_strand == "plus":
+            required_columns.append(args.map_ref_strand)
+
         # Checking the column
-        for name in (args.map_id, args.map_chr, args.map_pos, args.map_allele):
+        for name in required_columns:
             if name not in header:
                 raise ProgramError("{}: missing column '{}'".format(
-                    args.map_filename,
-                    name,
+                    args.map_filename, name,
                 ))
 
     # Checking we can write to the output directory (if required)
@@ -1005,22 +1087,29 @@ def parse_args(parser):
     group.add_argument(
         "--beeline-id", type=str, metavar="COL", default="SNP Name",
         help="The name of the column containing the marker identification "
-             "number for beeline [%(default)s]",
+             "number for beeline. [%(default)s]",
     )
     group.add_argument(
-        "--beeline-sample", type=str, metavar="COL", default="Sample ID",
+        "--beeline-sample", type=str, metavar="COL", default="Sample Name",
         help="The name of the column containing the sample identification "
-             "number for beeline [%(default)s]",
+             "number for beeline. [%(default)s]",
     )
     group.add_argument(
         "--beeline-a1", type=str, metavar="COL", default="Allele1 - Forward",
-        help="The name of the column containing the first allele for beeline "
+        help="The name of the column containing the first allele for beeline. "
              "[%(default)s]",
     )
     group.add_argument(
         "--beeline-a2", type=str, metavar="COL", default="Allele2 - Forward",
-        help="The name of the column containing the second allele for beeline "
-             "[%(default)s]",
+        help="The name of the column containing the second allele for "
+             "beeline. [%(default)s]",
+    )
+    group.add_argument(
+        "--beeline-strand", type=str, metavar="STR",
+        choices={"forward", "plus", "top"},
+        help="The strand for the alleles. This will help in determining the "
+             "A/B alleles. If unset, the strand will be infer by the name of "
+             "the columns for the two alleles.",
     )
 
     # The mapping options
@@ -1028,28 +1117,48 @@ def parse_args(parser):
     group.add_argument(
         "--map-id", type=str, metavar="COL", default="Name",
         help="The name of the column containing the marker identification "
-             "numbers [%(default)s]",
+             "numbers. [%(default)s]",
     )
     group.add_argument(
         "--map-chr", type=str, metavar="COL", default="Chr",
-        help="The name of the column containing the chromosome [%(default)s]",
+        help="The name of the column containing the chromosome. [%(default)s]",
     )
     group.add_argument(
         "--map-pos", type=str, metavar="COL", default="MapInfo",
-        help="The name of the column containing the position [%(default)s]",
+        help="The name of the column containing the position. [%(default)s]",
     )
     group.add_argument(
         "--map-allele", type=str, metavar="COL", default="SNP",
-        help="The name of the column containing the alleles [%(default)s]",
+        help="The name of the column containing the alleles. [%(default)s]",
+    )
+    group.add_argument(
+        "--map-illumina-id", type=str, metavar="COL", default="IlmnID",
+        help="The name of the column containing the Illumina ID. This ID "
+             "contains information about the marker's Forward strand and help "
+             "determining the A/B alleles. [%(default)s]",
+    )
+    group.add_argument(
+        "--map-illumina-strand", type=str, metavar="COL", default="IlmnStrand",
+        help="The name of the column containing the Illumina strand. This "
+             "information helps in determining the A/B alleles since it "
+             "contains the marker's orientation for the TOP alleles. "
+             "[%(default)s]",
+    )
+    group.add_argument(
+        "--map-ref-strand", type=str, metavar="COL", default="RefStrand",
+        help="The name of the column containing the reference strand. This "
+             "information helps in determining the A/B alleles since it "
+             "contains the marker's orientation for the Plus alleles. "
+             "[%(default)s]",
     )
     group.add_argument(
         "--map-delim", type=str, metavar="SEP", default=",",
-        help="The field delimiter [%(default)s]",
+        help="The field delimiter. [%(default)s]",
     )
     group.add_argument(
         "--nb-snps-kw", type=str, metavar="KEYWORD", default="Num Used SNPs",
         help="The keyword that describe the number of used markers for the "
-             "report(s) (useful if beeline header format changes) "
+             "report(s) (useful if beeline header format changes). "
              "[%(default)s]",
     )
 
@@ -1057,7 +1166,7 @@ def parse_args(parser):
     group = p_parser.add_argument_group("Output Directory")
     group.add_argument(
         "-o", "--output-dir", type=str, metavar="DIR", dest="output_dir",
-        help="The output directory (default is working directory)",
+        help="The output directory (default is working directory).",
     )
 
     # Adding sub parsers
@@ -1086,7 +1195,7 @@ def parse_args(parser):
         "--format", type=str, metavar="FORMAT", choices={"bed", "ped"},
         default="bed", dest="o_format",
         help="The output format (one of 'bed' or 'ped' for binary or "
-             "normal pedfile format from Plink) [%(default)s].",
+             "normal pedfile format from Plink). [%(default)s]",
     )
 
     # The sample split parser
@@ -1094,7 +1203,7 @@ def parse_args(parser):
         "sample-split",
         help="Split the report so that there is one file for each sample.",
         description="The long report will be split so that each sample has "
-                    "its own separate file (version {})".format(__version__),
+                    "its own separate file (version {}).".format(__version__),
         parents=[p_parser],
     )
 
@@ -1107,7 +1216,7 @@ def parse_args(parser):
     group.add_argument(
         "--add-ab", action="store_true", dest="add_ab",
         help="Adds the A/B alleles in the output file (sometimes required by "
-             "other softwares).",
+             "other software).",
     )
     group.add_argument(
         "--add-mapping", action="store_true", dest="add_mapping",
@@ -1115,7 +1224,7 @@ def parse_args(parser):
     )
     group.add_argument(
         "--output-delim", type=str, metavar="SEP", dest="o_delim", default=",",
-        help="The output file field delimiter [%(default)s]",
+        help="The output file field delimiter. [%(default)s]",
     )
 
     # The extract parser
@@ -1132,11 +1241,11 @@ def parse_args(parser):
     group.add_argument(
         "-c", "--chr", type=str, nargs="+", dest="chrom",
         default=[str(encode_chromosome(str(chrom))) for chrom in range(1, 27)],
-        help="The chromosome to extract %(default)s",
+        help="The chromosome to extract. [%(default)s]",
     )
     group.add_argument(
         "-k", "--keep", type=str, metavar="FILE", dest="samples_to_keep",
-        help="A list of samples to extract",
+        help="A list of samples to extract.",
     )
 
     # The output options
@@ -1144,11 +1253,11 @@ def parse_args(parser):
     group.add_argument(
         "-s", "--suffix", type=str, metavar="STR", dest="o_suffix",
         default="_extract",
-        help="The suffix to add to the output file(s) [%(default)s]",
+        help="The suffix to add to the output file(s). [%(default)s]",
     )
     group.add_argument(
         "--output-delim", type=str, metavar="SEP", dest="o_delim", default=",",
-        help="The output file field delimiter [%(default)s]",
+        help="The output file field delimiter. [%(default)s]",
     )
 
     # Parsing and returning the arguments and options
