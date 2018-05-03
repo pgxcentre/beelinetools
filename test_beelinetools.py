@@ -248,6 +248,45 @@ class TestBeelineTools(unittest.TestCase):
                 beelinetools.encode_allele(allele, encoding),
             )
 
+    def test_need_complement_forward_strand(self):
+        """Tests the 'need_complement' function for 'Forward' strand."""
+        self.assertTrue(beelinetools.need_complement("m1_T_R_23", "forward"))
+        self.assertFalse(beelinetools.need_complement("m1_T_F_23", "forward"))
+
+    def test_need_complement_forward_strand_invalid(self):
+        """Tests 'need_complement' function for invalid 'Forward' strand."""
+        with self.assertRaises(ValueError) as e:
+            beelinetools.need_complement("m1_T_X_23", "forward")
+        self.assertEqual("m1_T_X_23: invalid forward value", str(e.exception))
+
+    def test_need_complement_plus_strand(self):
+        """Tests the 'need_complement' function for 'Plus' strand."""
+        self.assertTrue(beelinetools.need_complement("-", "plus"))
+        self.assertFalse(beelinetools.need_complement("+", "plus"))
+
+    def test_need_complement_plus_strand_invalid(self):
+        """Tests the 'need_complement' function for invalid 'Plus' strand."""
+        with self.assertRaises(ValueError) as e:
+            beelinetools.need_complement("/", "plus")
+        self.assertEqual("/: invalid plus value", str(e.exception))
+
+    def test_need_complement_top_strand(self):
+        """Tests the 'need_complement' function for 'Top' strand."""
+        self.assertTrue(beelinetools.need_complement("BOT", "top"))
+        self.assertFalse(beelinetools.need_complement("TOP", "top"))
+
+    def test_need_complement_top_strand_invalid(self):
+        """Tests the 'need_complement' function for invalid 'Top' strand."""
+        with self.assertRaises(ValueError) as e:
+            beelinetools.need_complement("foo", "top")
+        self.assertEqual("foo: invalid top value", str(e.exception))
+
+    def test_need_complement_invalid_strand(self):
+        """Tests the 'need_complement' function."""
+        with self.assertRaises(ValueError) as e:
+            beelinetools.need_complement("foo", "foo")
+        self.assertEqual("foo: invalid strand", str(e.exception))
+
 
 class TestBeelineToolsConvertPED(unittest.TestCase):
     def setUp(self):
@@ -1474,7 +1513,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
                     self.assertEqual(alleles.get("B", "0"), row[4])
-                    self.assertEqual(alleles["A"], row[5])
+                    self.assertEqual(alleles.get("A", "0"), row[5])
 
                     # We have compared this marker
                     seen_markers.add(marker)
@@ -1637,7 +1676,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
                     self.assertEqual(alleles.get("B", "0"), row[4])
-                    self.assertEqual(alleles["A"], row[5])
+                    self.assertEqual(alleles.get("A", "0"), row[5])
 
                     # We have compared this marker
                     seen_markers.add(marker)
@@ -1839,7 +1878,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
                     self.assertEqual(alleles.get("B", "0"), row[4])
-                    self.assertEqual(alleles["A"], row[5])
+                    self.assertEqual(alleles.get("A", "0"), row[5])
 
                     # We have compared this marker
                     seen_markers.add(marker)
