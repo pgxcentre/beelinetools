@@ -4,13 +4,13 @@
 
 # beelinetools - A toolkit to work with Illumina's beeline reports
 
-*Version 0.3.0*
+*Version 0.3.1*
 
 The `beelinetools` script perform different tasks on Illumina's Beeline final
 report (long format). Such tasks include conversion to the Plink format and
 data extraction.
 
-The script works on both **Python 2.7 and higher**, and **Python 3.3 and
+The script works on both **Python 2.7 and higher**, and **Python 3.4 and
 higher**. It has been developed and tested under Linux operating system, but
 should work on MacOS X and Windows operating systems.
 
@@ -24,7 +24,7 @@ information.
 $ beelinetools.py --help
 usage: beelinetools.py [-h] [-v] {convert,sample-split,extract} ...
 
-Performs different tasks on Illumina's beeline report(s) (version 0.3.0).
+Performs different tasks on Illumina's beeline report(s) (version 0.3.1).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -56,13 +56,16 @@ $ beelinetools.py convert --help
 usage: beelinetools.py convert [-h] [-v] -i FILE [FILE ...] -m FILE
                                [--beeline-id COL] [--beeline-sample COL]
                                [--beeline-a1 COL] [--beeline-a2 COL]
-                               [--map-id COL] [--map-chr COL] [--map-pos COL]
-                               [--map-allele COL] [--map-delim SEP]
+                               [--beeline-strand STR] [--map-id COL]
+                               [--map-chr COL] [--map-pos COL]
+                               [--map-allele COL] [--map-illumina-id COL]
+                               [--map-illumina-strand COL]
+                               [--map-ref-strand COL] [--map-delim SEP]
                                [--nb-snps-kw KEYWORD] [-o DIR]
                                [--format FORMAT]
 
 Conversion from the Beeline long report format to other, more commonly used,
-format (such as Plink) (version 0.3.0).
+format (such as Plink) (version 0.3.1).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -76,33 +79,52 @@ Input Files:
 
 Beeline Options:
   --beeline-id COL      The name of the column containing the marker
-                        identification number for beeline [SNP Name]
+                        identification number for beeline. [SNP Name]
   --beeline-sample COL  The name of the column containing the sample
-                        identification number for beeline [Sample ID]
+                        identification number for beeline. [Sample Name]
   --beeline-a1 COL      The name of the column containing the first allele for
-                        beeline [Allele1 - Forward]
+                        beeline. [Allele1 - Forward]
   --beeline-a2 COL      The name of the column containing the second allele
-                        for beeline [Allele2 - Forward]
+                        for beeline. [Allele2 - Forward]
+  --beeline-strand STR  The strand for the alleles. This will help in
+                        determining the A/B alleles. If unset, the strand will
+                        be infer by the name of the columns for the two
+                        alleles.
 
 Mapping Options:
   --map-id COL          The name of the column containing the marker
-                        identification numbers [Name]
-  --map-chr COL         The name of the column containing the chromosome [Chr]
-  --map-pos COL         The name of the column containing the position
+                        identification numbers. [Name]
+  --map-chr COL         The name of the column containing the chromosome.
+                        [Chr]
+  --map-pos COL         The name of the column containing the position.
                         [MapInfo]
-  --map-allele COL      The name of the column containing the alleles [SNP]
-  --map-delim SEP       The field delimiter [,]
+  --map-allele COL      The name of the column containing the alleles. [SNP]
+  --map-illumina-id COL
+                        The name of the column containing the Illumina ID.
+                        This ID contains information about the marker's
+                        Forward strand and help determining the A/B alleles.
+                        [IlmnID]
+  --map-illumina-strand COL
+                        The name of the column containing the Illumina strand.
+                        This information helps in determining the A/B alleles
+                        since it contains the marker's orientation for the TOP
+                        alleles. [IlmnStrand]
+  --map-ref-strand COL  The name of the column containing the reference
+                        strand. This information helps in determining the A/B
+                        alleles since it contains the marker's orientation for
+                        the Plus alleles. [RefStrand]
+  --map-delim SEP       The field delimiter. [,]
   --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
                         for the report(s) (useful if beeline header format
-                        changes) [Num Used SNPs]
+                        changes). [Num Used SNPs]
 
 Output Directory:
   -o DIR, --output-dir DIR
-                        The output directory (default is working directory)
+                        The output directory (default is working directory).
 
 Output Format:
   --format FORMAT       The output format (one of 'bed' or 'ped' for binary or
-                        normal pedfile format from Plink) [bed].
+                        normal pedfile format from Plink). [bed]
 ```
 
 
@@ -118,13 +140,16 @@ $ beelinetools.py extract --help
 usage: beelinetools.py extract [-h] [-v] -i FILE [FILE ...] -m FILE
                                [--beeline-id COL] [--beeline-sample COL]
                                [--beeline-a1 COL] [--beeline-a2 COL]
-                               [--map-id COL] [--map-chr COL] [--map-pos COL]
-                               [--map-allele COL] [--map-delim SEP]
+                               [--beeline-strand STR] [--map-id COL]
+                               [--map-chr COL] [--map-pos COL]
+                               [--map-allele COL] [--map-illumina-id COL]
+                               [--map-illumina-strand COL]
+                               [--map-ref-strand COL] [--map-delim SEP]
                                [--nb-snps-kw KEYWORD] [-o DIR]
                                [-c CHROM [CHROM ...]] [-k FILE] [-s STR]
                                [--output-delim SEP]
 
-Extracts information from a Beeline long report (version 0.3.0).
+Extracts information from a Beeline long report (version 0.3.1).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -138,41 +163,60 @@ Input Files:
 
 Beeline Options:
   --beeline-id COL      The name of the column containing the marker
-                        identification number for beeline [SNP Name]
+                        identification number for beeline. [SNP Name]
   --beeline-sample COL  The name of the column containing the sample
-                        identification number for beeline [Sample ID]
+                        identification number for beeline. [Sample Name]
   --beeline-a1 COL      The name of the column containing the first allele for
-                        beeline [Allele1 - Forward]
+                        beeline. [Allele1 - Forward]
   --beeline-a2 COL      The name of the column containing the second allele
-                        for beeline [Allele2 - Forward]
+                        for beeline. [Allele2 - Forward]
+  --beeline-strand STR  The strand for the alleles. This will help in
+                        determining the A/B alleles. If unset, the strand will
+                        be infer by the name of the columns for the two
+                        alleles.
 
 Mapping Options:
   --map-id COL          The name of the column containing the marker
-                        identification numbers [Name]
-  --map-chr COL         The name of the column containing the chromosome [Chr]
-  --map-pos COL         The name of the column containing the position
+                        identification numbers. [Name]
+  --map-chr COL         The name of the column containing the chromosome.
+                        [Chr]
+  --map-pos COL         The name of the column containing the position.
                         [MapInfo]
-  --map-allele COL      The name of the column containing the alleles [SNP]
-  --map-delim SEP       The field delimiter [,]
+  --map-allele COL      The name of the column containing the alleles. [SNP]
+  --map-illumina-id COL
+                        The name of the column containing the Illumina ID.
+                        This ID contains information about the marker's
+                        Forward strand and help determining the A/B alleles.
+                        [IlmnID]
+  --map-illumina-strand COL
+                        The name of the column containing the Illumina strand.
+                        This information helps in determining the A/B alleles
+                        since it contains the marker's orientation for the TOP
+                        alleles. [IlmnStrand]
+  --map-ref-strand COL  The name of the column containing the reference
+                        strand. This information helps in determining the A/B
+                        alleles since it contains the marker's orientation for
+                        the Plus alleles. [RefStrand]
+  --map-delim SEP       The field delimiter. [,]
   --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
                         for the report(s) (useful if beeline header format
-                        changes) [Num Used SNPs]
+                        changes). [Num Used SNPs]
 
 Output Directory:
   -o DIR, --output-dir DIR
-                        The output directory (default is working directory)
+                        The output directory (default is working directory).
 
 Extraction Options:
   -c CHROM [CHROM ...], --chr CHROM [CHROM ...]
-                        The chromosome to extract ['1', '2', '3', '4', '5',
+                        The chromosome to extract. [['1', '2', '3', '4', '5',
                         '6', '7', '8', '9', '10', '11', '12', '13', '14',
                         '15', '16', '17', '18', '19', '20', '21', '22', '23',
-                        '24', '25', '26']
-  -k FILE, --keep FILE  A list of samples to extract
+                        '24', '25', '26']]
+  -k FILE, --keep FILE  A list of samples to extract.
 
 Output Options:
-  -s STR, --suffix STR  The suffix to add to the output file(s) [_extract]
-  --output-delim SEP    The output file field delimiter [,]
+  -s STR, --suffix STR  The suffix to add to the output file(s). [_extract]
+  --output-delim SEP    The output file field delimiter. [,]
 ```
 
 
@@ -187,14 +231,17 @@ $ beelinetools.py sample-split --help
 usage: beelinetools.py sample-split [-h] [-v] -i FILE [FILE ...] -m FILE
                                     [--beeline-id COL] [--beeline-sample COL]
                                     [--beeline-a1 COL] [--beeline-a2 COL]
-                                    [--map-id COL] [--map-chr COL]
-                                    [--map-pos COL] [--map-allele COL]
-                                    [--map-delim SEP] [--nb-snps-kw KEYWORD]
-                                    [-o DIR] [--keep-metadata] [--add-ab]
+                                    [--beeline-strand STR] [--map-id COL]
+                                    [--map-chr COL] [--map-pos COL]
+                                    [--map-allele COL] [--map-illumina-id COL]
+                                    [--map-illumina-strand COL]
+                                    [--map-ref-strand COL] [--map-delim SEP]
+                                    [--nb-snps-kw KEYWORD] [-o DIR]
+                                    [--keep-metadata] [--add-ab]
                                     [--add-mapping] [--output-delim SEP]
 
 The long report will be split so that each sample has its own separate file
-(version 0.3.0)
+(version 0.3.1).
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -208,37 +255,56 @@ Input Files:
 
 Beeline Options:
   --beeline-id COL      The name of the column containing the marker
-                        identification number for beeline [SNP Name]
+                        identification number for beeline. [SNP Name]
   --beeline-sample COL  The name of the column containing the sample
-                        identification number for beeline [Sample ID]
+                        identification number for beeline. [Sample Name]
   --beeline-a1 COL      The name of the column containing the first allele for
-                        beeline [Allele1 - Forward]
+                        beeline. [Allele1 - Forward]
   --beeline-a2 COL      The name of the column containing the second allele
-                        for beeline [Allele2 - Forward]
+                        for beeline. [Allele2 - Forward]
+  --beeline-strand STR  The strand for the alleles. This will help in
+                        determining the A/B alleles. If unset, the strand will
+                        be infer by the name of the columns for the two
+                        alleles.
 
 Mapping Options:
   --map-id COL          The name of the column containing the marker
-                        identification numbers [Name]
-  --map-chr COL         The name of the column containing the chromosome [Chr]
-  --map-pos COL         The name of the column containing the position
+                        identification numbers. [Name]
+  --map-chr COL         The name of the column containing the chromosome.
+                        [Chr]
+  --map-pos COL         The name of the column containing the position.
                         [MapInfo]
-  --map-allele COL      The name of the column containing the alleles [SNP]
-  --map-delim SEP       The field delimiter [,]
+  --map-allele COL      The name of the column containing the alleles. [SNP]
+  --map-illumina-id COL
+                        The name of the column containing the Illumina ID.
+                        This ID contains information about the marker's
+                        Forward strand and help determining the A/B alleles.
+                        [IlmnID]
+  --map-illumina-strand COL
+                        The name of the column containing the Illumina strand.
+                        This information helps in determining the A/B alleles
+                        since it contains the marker's orientation for the TOP
+                        alleles. [IlmnStrand]
+  --map-ref-strand COL  The name of the column containing the reference
+                        strand. This information helps in determining the A/B
+                        alleles since it contains the marker's orientation for
+                        the Plus alleles. [RefStrand]
+  --map-delim SEP       The field delimiter. [,]
   --nb-snps-kw KEYWORD  The keyword that describe the number of used markers
                         for the report(s) (useful if beeline header format
-                        changes) [Num Used SNPs]
+                        changes). [Num Used SNPs]
 
 Output Directory:
   -o DIR, --output-dir DIR
-                        The output directory (default is working directory)
+                        The output directory (default is working directory).
 
 Split Options:
   --keep-metadata       Keeps the meta data ([Header]) in each of the output
                         reports.
   --add-ab              Adds the A/B alleles in the output file (sometimes
-                        required by other softwares).
+                        required by other software).
   --add-mapping         Adds mapping information (chromosome/Position).
-  --output-delim SEP    The output file field delimiter [,]
+  --output-delim SEP    The output file field delimiter. [,]
 ```
 
 
@@ -247,10 +313,10 @@ Split Options:
 To test the script, perform the following command:
 
 ```console
-$ python test_beelinetools.py 
-.......................................................
+$ python test_beelinetools.py
+..................................................................
 ----------------------------------------------------------------------
-Ran 55 tests in 0.143s
+Ran 66 tests in 0.116s
 
 OK
 ```
