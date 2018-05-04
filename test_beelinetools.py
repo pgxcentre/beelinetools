@@ -1693,7 +1693,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         mapping_info = self.namespace.mapping_info
         sample_genotype = self.namespace.sample_genotype
         sample_genotype_2 = self.namespace.sample_genotype_2
-        minor_major_info = self.namespace.minor_major_info
 
         # Creating the namespace for the function
         other_options = Namespace(
@@ -1730,7 +1729,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Getting the A/B alleles
                     alleles = {
                         ab_allele: allele for allele, ab_allele in
-                        minor_major_info[file_n][marker].items()
+                        mapping_info[marker].alleles.items()
                     }
 
                     # Comparing the content of the file
@@ -1740,8 +1739,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual(marker, row[1])
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
-                    self.assertEqual(alleles.get("B", "0"), row[4])
-                    self.assertEqual(alleles.get("A", "0"), row[5])
+                    self.assertEqual(alleles["B"], row[4])
+                    self.assertEqual(alleles["A"], row[5])
 
                     # We have compared this marker
                     seen_markers.add(marker)
@@ -1832,7 +1831,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         mapping_info = self.namespace.mapping_info
         sample_genotype = self.namespace.sample_genotype
         sample_genotype_2 = self.namespace.sample_genotype_2
-        minor_major_info = self.namespace.minor_major_info
 
         # We rename sample_2 to sample_1 in the first file
         with open(tmp_filename) as f:
@@ -1892,8 +1890,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
 
                     # Getting the A/B alleles
                     alleles = {
-                        ab_allele: allele for allele, ab_allele in
-                        minor_major_info[file_n][marker].items()
+                        allele_ab: allele for allele, allele_ab
+                        in mapping_info[marker].alleles.items()
                     }
 
                     # Comparing the content of the file
@@ -1903,8 +1901,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual(marker, row[1])
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
-                    self.assertEqual(alleles.get("B", "0"), row[4])
-                    self.assertEqual(alleles.get("A", "0"), row[5])
+                    self.assertEqual(alleles["B"], row[4])
+                    self.assertEqual(alleles["A"], row[5])
 
                     # We have compared this marker
                     seen_markers.add(marker)
@@ -2051,7 +2049,6 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
         mapping_info = self.namespace.mapping_info
         sample_genotype = self.namespace.sample_genotype
         sample_genotype_2 = self.namespace.sample_genotype_2
-        minor_major_info = self.namespace.minor_major_info
 
         # Renaming the SNP keyword
         for fn in (tmp_filename, tmp_filename_2):
@@ -2095,7 +2092,7 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     # Getting the A/B alleles
                     alleles = {
                         ab_allele: allele for allele, ab_allele in
-                        minor_major_info[file_n][marker].items()
+                        mapping_info[marker].alleles.items()
                     }
 
                     # Comparing the content of the file
@@ -2105,8 +2102,8 @@ class TestBeelineToolsConvertBED(unittest.TestCase):
                     self.assertEqual(marker, row[1])
                     self.assertEqual("0", row[2])
                     self.assertEqual(mapping_info[marker].pos, int(row[3]))
-                    self.assertEqual(alleles.get("B", "0"), row[4])
-                    self.assertEqual(alleles.get("A", "0"), row[5])
+                    self.assertEqual(alleles["B"], row[4])
+                    self.assertEqual(alleles["A"], row[5])
 
                     # We have compared this marker
                     seen_markers.add(marker)
@@ -3706,7 +3703,6 @@ class AssertLogsContext_Compatibility(BaseTestCaseContext_Compatibility):
 def generate_dataset(nb_samples, nb_markers, tmp_dir):
     # The mapping information and the minor/major coding (for BED)
     mapping_info = {}
-    minor_major_info = ({}, {})
 
     # Creating a temporary file
     sample_genotype = defaultdict(dict)
@@ -3765,23 +3761,6 @@ def generate_dataset(nb_samples, nb_markers, tmp_dir):
                 genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                 sample_genotype[sample][marker_id] = genotype
 
-                # Set here (for minor/major allele)
-                # The first seen is considered the A (major) allele
-                if marker_id not in minor_major_info[0]:
-                    minor_major_info[0][marker_id] = {}
-                if a1 not in minor_major_info[0][marker_id]:
-                    if a1 != "-":
-                        if len(minor_major_info[0][marker_id]) == 0:
-                            minor_major_info[0][marker_id][a1] = "A"
-                        else:
-                            minor_major_info[0][marker_id][a1] = "B"
-                if a2 not in minor_major_info[0][marker_id]:
-                    if a2 != "-":
-                        if len(minor_major_info[0][marker_id]) == 0:
-                            minor_major_info[0][marker_id][a2] = "A"
-                        else:
-                            minor_major_info[0][marker_id][a2] = "B"
-
                 # Printing the file
                 to_print = [sample_id, marker_id, random.uniform(0, 3),
                             random.uniform(0, 3), a1, a2, random.random(),
@@ -3831,23 +3810,6 @@ def generate_dataset(nb_samples, nb_markers, tmp_dir):
                 genotype = "0 0" if a1 == "-" else "{} {}".format(a1, a2)
                 sample_genotype_2[sample][marker_id] = genotype
 
-                # Set here (for minor/major allele)
-                # The first seen is considered the A (major) allele
-                if marker_id not in minor_major_info[1]:
-                    minor_major_info[1][marker_id] = {}
-                if a1 not in minor_major_info[1][marker_id]:
-                    if a1 != "-":
-                        if len(minor_major_info[1][marker_id]) == 0:
-                            minor_major_info[1][marker_id][a1] = "A"
-                        else:
-                            minor_major_info[1][marker_id][a1] = "B"
-                if a2 not in minor_major_info[1][marker_id]:
-                    if a2 != "-":
-                        if len(minor_major_info[1][marker_id]) == 0:
-                            minor_major_info[1][marker_id][a2] = "A"
-                        else:
-                            minor_major_info[1][marker_id][a2] = "B"
-
                 # Printing the file
                 to_print = [sample_id, marker_id, random.uniform(0, 3),
                             random.uniform(0, 3), a1, a2, random.random(),
@@ -3868,7 +3830,6 @@ def generate_dataset(nb_samples, nb_markers, tmp_dir):
         mapping_info=mapping_info,
         sample_genotype=sample_genotype,
         sample_genotype_2=sample_genotype_2,
-        minor_major_info=minor_major_info,
         tmp_content=tmp_content,
         tmp_content_2=tmp_content_2,
     )
