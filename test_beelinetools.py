@@ -171,6 +171,24 @@ class TestBeelineTools(unittest.TestCase):
                     chrom=chrom, pos=pos, alleles={a1: "A", a2: "B"},
                 )
 
+            # Adding some INDELs
+            for i in range(10):
+                marker_name = "indel_{}".format(i + 1)
+                chrom = random.randint(1, 26)
+                pos = random.randint(1, 3000000)
+                alleles = random.sample(["I", "D"], 2)
+                snp = "[{}]".format("/".join(alleles))
+                strand = random.choice(("PLUS", "MINUS"))
+
+                # Printing the mapping information
+                print(marker_name, chrom, pos, snp, strand, sep=",", file=f)
+
+                # The expected data
+                expected[marker_name] = beelinetools._Location(
+                    chrom=chrom, pos=pos,
+                    alleles={alleles[0]: "A", alleles[1]: "B"},
+                )
+
         # Getting the expected data
         observed = beelinetools.read_mapping_info(
             i_filename=tmp_filename,

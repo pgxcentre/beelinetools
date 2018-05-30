@@ -38,6 +38,9 @@ _unknown_location = _Location(chrom=0, pos=0, alleles={})
 _complement = {"A": "T", "T": "A", "C": "G", "G": "C",
                "-": "-", "D": "D", "I": "I"}
 
+# Alleles associated with INDELs
+_indels = {"I", "D"}
+
 # The AB encoding
 _geno_add_encoding = {"AA": 0, "AB": 1, "BA": 1, "BB": 2}
 
@@ -748,16 +751,18 @@ def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele,
             chrom = encode_chromosome(row[header[map_chr]])
             pos = int(row[header[map_pos]])
 
-            # Checking if we need to complement the alleles or not
-            # Getting the strand information
-            complement_required = need_complement(
-                row[header[strand_col]], allele_strand,
-            )
-
             # Splitting the alleles
             alleles = row[header[map_allele]].split("/")
             a_allele = alleles[0][1:]
             b_allele = alleles[1][:-1]
+
+            # Checking if we need to complement the alleles or not
+            # Getting the strand information, but skipping for INDELs
+            complement_required = False
+            if a_allele not in _indels and b_allele not in _indels:
+                complement_required = need_complement(
+                    row[header[strand_col]], allele_strand,
+                )
 
             # Complementing if required
             if complement_required:
