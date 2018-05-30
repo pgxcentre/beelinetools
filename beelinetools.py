@@ -27,7 +27,7 @@ except ImportError:
 __author__ = "Louis-Philippe Lemieux Perreault"
 __copyright__ = "Copyright 2015, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "MIT"
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 
 # The location tuple
