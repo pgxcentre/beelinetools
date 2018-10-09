@@ -27,7 +27,7 @@ except ImportError:
 __author__ = "Louis-Philippe Lemieux Perreault"
 __copyright__ = "Copyright 2015, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "MIT"
-__version__ = "0.3.2"
+__version__ = "0.3.3b1"
 
 
 # The location tuple
@@ -87,6 +87,7 @@ def main():
             map_allele=args.map_allele,
             allele_strand=args.beeline_strand,
             strand_col=strand_column,
+            ab_file=args.save_ab_file,
         )
 
         if args.analysis_type == "convert":
@@ -713,7 +714,7 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
 
 
 def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele,
-                      allele_strand, strand_col):
+                      allele_strand, strand_col, ab_file):
     """Reads the mapping information to gather genomic locations.
 
     Args:
@@ -775,6 +776,14 @@ def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele,
                 pos=pos,
                 alleles={a_allele: "A", b_allele: "B"},
             )
+
+    if ab_file is not None:
+        with open(ab_file, "w") as f:
+            print("snp", "a.{}".format(allele_strand),
+                  "b.{}".format(allele_strand), sep=",", file=f)
+            for snp, location in map_info.items():
+                reversed_ab = {v: k for k, v in location.alleles.items()}
+                print(snp, reversed_ab["A"], reversed_ab["B"], sep=",", file=f)
 
     logging.info("  - {:,d} markers".format(len(map_info)))
     return map_info
@@ -1097,6 +1106,12 @@ def parse_args(parser):
              "A/B alleles. If unset, the strand will be infer by the name of "
              "the columns for the two alleles.",
     )
+    group.add_argument(
+        "--nb-snps-kw", type=str, metavar="KEYWORD", default="Num Used SNPs",
+        help="The keyword that describe the number of used markers for the "
+             "report(s) (useful if beeline header format changes). "
+             "[%(default)s]",
+    )
 
     # The mapping options
     group = p_parser.add_argument_group("Mapping Options")
@@ -1142,10 +1157,8 @@ def parse_args(parser):
         help="The field delimiter. [%(default)s]",
     )
     group.add_argument(
-        "--nb-snps-kw", type=str, metavar="KEYWORD", default="Num Used SNPs",
-        help="The keyword that describe the number of used markers for the "
-             "report(s) (useful if beeline header format changes). "
-             "[%(default)s]",
+        "--save-ab-file", type=str, metavar="FILE",
+        help="Save a AB translation file.",
     )
 
     # The output options
