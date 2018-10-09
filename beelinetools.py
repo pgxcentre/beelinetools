@@ -714,7 +714,7 @@ def extract_beeline(i_filenames, out_dir, o_suffix, locations, samples,
 
 
 def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele,
-                      allele_strand, strand_col, ab_file):
+                      allele_strand, strand_col, ab_file=None):
     """Reads the mapping information to gather genomic locations.
 
     Args:
@@ -726,6 +726,7 @@ def read_mapping_info(i_filename, delim, map_id, map_chr, map_pos, map_allele,
         map_allele (str): the name of the column containing the alleles
         allele_strand (str): the strand of the alleles in the beeline file
         strand_col (str): the name of the column containing the stand info
+        ab_file (str): The name of the AB file to save (might be None)
 
     Returns:
         dict: a dictionary from marker ID to genomic location
